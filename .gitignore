@@ -1,0 +1,62 @@
+# macOS metadata
+.DS_Store
+.AppleDouble
+._*
+
+# Node dependencies, generated output, and test reports
+node_modules/
+backend/dist/
+coverage/
+.nyc_output/
+*.tsbuildinfo
+*.log
+npm-debug.log*
+
+# Local environment and credentials (keep documented examples)
+.env
+.env.*
+!.env.example
+!.env.*.example
+.aws/
+*.pem
+*.key
+*.p12
+*.pfx
+*.mobileprovision
+
+# Local SQLite databases, journals, and sidecar files
+backend/data/
+*.sqlite
+*.sqlite3
+*.db
+*.sqlite-journal
+*.sqlite3-journal
+*.db-journal
+*.sqlite-shm
+*.sqlite-wal
+*.sqlite3-shm
+*.sqlite3-wal
+*.db-shm
+*.db-wal
+
+# Xcode generated output and per-user settings
+DerivedData/
+build/
+xcuserdata/
+*.xcuserstate
+*.xcscmblueprint
+*.xccheckout
+*.xcarchive
+*.ipa
+*.dSYM/
+*.dSYM.zip
+*.xcresult/
+
+# Swift Package Manager generated state (keep Package.resolved)
+.build/
+.swiftpm/
+
+# Editor temporary files (shared editor settings may be committed)
+*.swp
+*.swo
+*~
