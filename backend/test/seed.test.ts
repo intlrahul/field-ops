@@ -24,6 +24,12 @@ test('development seed persists hashed accounts and reruns without resetting the
         email: string; role: string; password_hash: string;
       }[];
       expect(users.map(u => u.role)).toEqual(['supervisor','technician']);
+      expect(db.prepare('SELECT COUNT(*) AS count FROM assets').get()).toEqual({ count: 1 });
+      expect(db.prepare('SELECT COUNT(*) AS count FROM inspections').get()).toEqual({ count: 1 });
+      expect(db.prepare(`SELECT u.email, i.status, i.asset_tag AS tag FROM inspections i
+        JOIN users u ON u.id = i.assignee_id`).get()).toEqual({
+          email: 'technician@fieldops.test',status: 'assigned',tag: 'DEMO-PUMP-001',
+        });
       for (const user of users) {
         expect(user.email).toBe(`${user.role}@fieldops.test`);
         expect(user.password_hash).toMatch(/^\$argon2id\$/);

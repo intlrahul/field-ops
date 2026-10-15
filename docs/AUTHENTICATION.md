@@ -19,7 +19,7 @@ npm run seed
 npm run dev
 ```
 
-Seed creates supervisor@fieldops.test and technician@fieldops.test, with random UUIDs and Argon2id password hashes. Rerunning it leaves existing accounts, passwords, and roles unchanged. Both passwords are required by the seed command even on reruns. Seeding is blocked with NODE_ENV=production. No public registration or role-changing API exists.
+Seed creates supervisor@fieldops.test and technician@fieldops.test, with random UUIDs and Argon2id password hashes. Rerunning it leaves existing accounts, passwords, and roles unchanged. Both passwords are required by the seed command even on reruns. Seeding is blocked with NODE_ENV=production. No public registration or role-changing API exists. The seed also adds a demo asset and assigned inspection; see ASSETS_INSPECTIONS.md.
 
 ## Requests
 
@@ -81,6 +81,6 @@ Keep refresh tokens in Keychain and access tokens in memory initially. Replace t
 
 ## Deferred and limitations
 
-HTTPS setup, Docker, password reset, email verification, user administration, session-management UI, logout-all, device binding, MFA, and expired-session/token cleanup are deferred. Consumed token records currently accumulate. In-memory IP throttling is suitable only for this single-instance learning slice. No inspection APIs, sync engine, or offline-access policy exists yet.
+HTTPS setup, Docker, password reset, email verification, user administration, session-management UI, logout-all, device binding, MFA, and expired-session/token cleanup are deferred. Consumed token records currently accumulate. In-memory IP throttling is suitable only for this single-instance learning slice. Inspection creation/list/details and workflow mutations now exist; the sync engine and offline-access policy remain pending.
 
 Libraries: [node-argon2](https://github.com/ranisalt/node-argon2), [jose](https://github.com/panva/jose), [Fastify rate limiter](https://github.com/fastify/fastify-rate-limit).

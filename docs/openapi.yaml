@@ -1,11 +1,29 @@
 openapi: 3.0.3
 info:
   title: FieldOps API
-  version: 0.2.0
-  description: Authentication and health API. Domain endpoints are deferred. Request bodies are limited to 16 KiB; oversized requests return 413 with the standard error envelope.
+  version: 0.4.0
+  description: Authentication, health, assets, and assigned-inspection API. Includes inspection workflow mutations. Synchronization is deferred. Request bodies are limited to 16 KiB; oversized requests return 413 with the standard error envelope.
 servers:
   - url: http://localhost:3000
 paths:
+  /inspections/{id}/start:
+    $ref: './inspection-workflow.openapi.json#/paths/~1inspections~1{id}~1start'
+  /inspections/{id}/complete:
+    $ref: './inspection-workflow.openapi.json#/paths/~1inspections~1{id}~1complete'
+  /inspections/{id}/checklist-items/{itemId}/result:
+    $ref: './inspection-workflow.openapi.json#/paths/~1inspections~1{id}~1checklist-items~1{itemId}~1result'
+  /inspections/{id}/readings/{readingId}:
+    $ref: './inspection-workflow.openapi.json#/paths/~1inspections~1{id}~1readings~1{readingId}'
+  /inspections/{id}/notes:
+    $ref: './inspection-workflow.openapi.json#/paths/~1inspections~1{id}~1notes'
+  /assets:
+    $ref: './assets-inspections.openapi.json#/paths/~1assets'
+  /assets/{id}:
+    $ref: './assets-inspections.openapi.json#/paths/~1assets~1{id}'
+  /inspections:
+    $ref: './assets-inspections.openapi.json#/paths/~1inspections'
+  /inspections/{id}:
+    $ref: './assets-inspections.openapi.json#/paths/~1inspections~1{id}'
   /health:
     get:
       operationId: getHealth
@@ -205,6 +223,22 @@ components:
           properties:
             code: {type: string}
             message: {type: string}
+            details:
+              type: object
+              additionalProperties: false
+              required: [blockers]
+              properties:
+                blockers:
+                  type: array
+                  items:
+                    type: object
+                    additionalProperties: false
+                    required: [code, itemId]
+                    properties:
+                      code:
+                        type: string
+                        enum: [CHECKLIST_UNANSWERED, FAILURE_NOTE_REQUIRED, READING_REQUIRED, READING_INVALID, READING_OUT_OF_RANGE]
+                      itemId: {type: string, format: uuid}
   responses:
     Tokens:
       description: Tokens issued; Cache-Control is no-store. Access lasts at most 15 minutes, capped by session expiry.

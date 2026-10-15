@@ -1,4 +1,6 @@
 import Database from 'better-sqlite3';
+import { workflowSchema } from '../inspections/workflow-schema.js';
+import { inspectionSchema } from '../inspections/schema.js';
 import { authSchema } from '../auth/schema.js';
 import { mkdirSync } from 'node:fs';
 import { dirname } from 'node:path';
@@ -21,6 +23,8 @@ export function openDatabase(path: string): SqliteDatabase {
 
 const migrations: readonly { version: number; sql: string }[] = [
   { version: 1, sql: authSchema },
+  { version: 2, sql: inspectionSchema },
+  { version: 3, sql: workflowSchema },
 ];
 
 export function migrate(db: SqliteDatabase): void {

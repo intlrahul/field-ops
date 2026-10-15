@@ -1,15 +1,18 @@
 import Fastify from 'fastify';
+import { inspectionRoutes } from './inspections/routes.js';
+import { DomainError } from './inspections/errors.js';
 import { AuthError, authService, type AuthOptions } from './auth/service.js';
 import { authRoutes } from './auth/routes.js';
 import type { SqliteDatabase } from './db/database.js';
 
 export function buildApp(db: SqliteDatabase, logger = false, authOptions?: AuthOptions) {
   const app = Fastify({ logger: logger ? { redact: ['req.headers.authorization', 'req.headers.cookie'] } : false,
-    bodyLimit: 16384, ajv: { customOptions: { removeAdditional: false } } });
+    bodyLimit: 16384, ajv: { customOptions: { removeAdditional: false, coerceTypes: false } } });
   app.setErrorHandler((error, _req, reply) => {
-    if (error instanceof AuthError) {
+    if (error instanceof AuthError || error instanceof DomainError) {
       if (error.statusCode === 401) reply.header('WWW-Authenticate','Bearer');
-      return reply.code(error.statusCode).send({ error: { code: error.code, message: error.message } });
+      return reply.code(error.statusCode).send({ error: { code: error.code, message: error.message,
+        ...(error instanceof DomainError && error.details ? { details: error.details } : {}) } });
     }
     const status = typeof error === 'object' && error !== null && 'statusCode' in error && typeof error.statusCode === 'number' ? error.statusCode : 500;
     if (status < 500) return reply.code(status).send({ error: {
@@ -23,6 +26,7 @@ export function buildApp(db: SqliteDatabase, logger = false, authOptions?: AuthO
   if (authOptions) {
     const auth = authService(db, authOptions);
     app.register(async scope => authRoutes(scope, auth));
+    app.register(async scope => inspectionRoutes(scope, db, auth, authOptions.now));
   }
   app.get('/health', {
     schema: {
