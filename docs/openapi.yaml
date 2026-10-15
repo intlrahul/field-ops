@@ -1,8 +1,8 @@
 openapi: 3.0.3
 info:
   title: FieldOps API
-  version: 0.1.0
-  description: Foundation only. Authentication and domain endpoints are not implemented.
+  version: 0.2.0
+  description: Authentication and health API. Domain endpoints are deferred. Request bodies are limited to 16 KiB; oversized requests return 413 with the standard error envelope.
 servers:
   - url: http://localhost:3000
 paths:
@@ -48,3 +48,207 @@ paths:
                 error:
                   code: SERVICE_UNAVAILABLE
                   message: Service temporarily unavailable
+  /auth/login:
+    post:
+      operationId: login
+      summary: Create an independent device session
+      description: Five attempts per minute per source IP. Email is case insensitive. No public registration.
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [email, password]
+              properties:
+                email:
+                  type: string
+                  minLength: 3
+                  maxLength: 254
+                  pattern: '^[^\s@]+@[^\s@]+\.[^\s@]+$'
+                password:
+                  type: string
+                  minLength: 1
+                  maxLength: 1024
+            example:
+              email: technician@fieldops.test
+              password: YOUR_SEEDED_PASSWORD
+      responses:
+        '200':
+          $ref: '#/components/responses/Tokens'
+        '400':
+          $ref: '#/components/responses/InvalidRequest'
+        '401':
+          description: Invalid credentials, unknown user, or disabled account (same response)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: {code: INVALID_CREDENTIALS, message: Invalid email or password}
+        '429':
+          $ref: '#/components/responses/RateLimited'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /auth/refresh:
+    post:
+      operationId: refreshSession
+      summary: Consume a refresh token and issue its replacement
+      description: >-
+        Thirty attempts per minute per source IP. Session deadline stays fixed at
+        30 days after login. Reusing a consumed token revokes the entire session.
+        Do not automatically retry refresh or run concurrent refreshes. A lost
+        response may require signing in again. Other device sessions are unaffected.
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [refreshToken]
+              properties:
+                refreshToken:
+                  type: string
+                  pattern: '^[A-Za-z0-9_-]{43}$'
+            example:
+              refreshToken: aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+      responses:
+        '200':
+          $ref: '#/components/responses/Tokens'
+        '400':
+          $ref: '#/components/responses/InvalidRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /auth/logout:
+    post:
+      operationId: logout
+      summary: Revoke the current device session immediately
+      description: >-
+        Requires a currently valid access token. Revokes access and refresh tokens
+        for this session only. Subsequent calls with the revoked token return 401.
+        If access has expired, refresh first or discard local credentials; an unused
+        server session expires at its fixed deadline.
+      security:
+        - bearerAuth: []
+      responses:
+        '204':
+          description: Session revoked; empty response
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /me:
+    get:
+      operationId: getCurrentUser
+      summary: Return the authenticated user's current profile and role
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Current user; Cache-Control is no-store
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+              example:
+                id: 0190b6c1-b11d-4db0-8891-124ddfa32784
+                email: technician@fieldops.test
+                role: technician
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalError'
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    User:
+      type: object
+      additionalProperties: false
+      required: [id, email, role]
+      properties:
+        id: {type: string, format: uuid}
+        email: {type: string}
+        role: {type: string, enum: [supervisor, technician]}
+    TokenPair:
+      type: object
+      additionalProperties: false
+      required: [tokenType, accessToken, refreshToken, accessTokenExpiresAt, sessionExpiresAt, user]
+      properties:
+        tokenType: {type: string, enum: [Bearer]}
+        accessToken: {type: string}
+        refreshToken: {type: string, pattern: '^[A-Za-z0-9_-]{43}$'}
+        accessTokenExpiresAt: {type: string, format: date-time}
+        sessionExpiresAt: {type: string, format: date-time}
+        user:
+          $ref: '#/components/schemas/User'
+    Error:
+      type: object
+      additionalProperties: false
+      required: [error]
+      properties:
+        error:
+          type: object
+          additionalProperties: false
+          required: [code, message]
+          properties:
+            code: {type: string}
+            message: {type: string}
+  responses:
+    Tokens:
+      description: Tokens issued; Cache-Control is no-store. Access lasts at most 15 minutes, capped by session expiry.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/TokenPair'
+    InvalidRequest:
+      description: Invalid body, email shape, token shape, or unexpected property
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            error: {code: INVALID_REQUEST, message: Invalid request}
+    Unauthorized:
+      description: Missing, invalid, expired, revoked credentials or inactive user
+      headers:
+        WWW-Authenticate:
+          schema: {type: string}
+          description: Bearer
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            error: {code: UNAUTHORIZED, message: Authentication required}
+    RateLimited:
+      description: Too many attempts from this source IP
+      headers:
+        Retry-After:
+          schema: {type: integer}
+          description: Seconds until retry is allowed
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            error: {code: RATE_LIMITED, message: 'Too many requests; try again later'}
+    InternalError:
+      description: Unexpected server failure; no internal details exposed
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            error: {code: INTERNAL_ERROR, message: Internal server error}

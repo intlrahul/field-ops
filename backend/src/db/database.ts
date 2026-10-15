@@ -1,4 +1,5 @@
 import Database from 'better-sqlite3';
+import { authSchema } from '../auth/schema.js';
 import { mkdirSync } from 'node:fs';
 import { dirname } from 'node:path';
 
@@ -18,8 +19,9 @@ export function openDatabase(path: string): SqliteDatabase {
   }
 }
 
-// Add domain migrations only after their business rules and contracts are agreed.
-const migrations: readonly { version: number; sql: string }[] = [];
+const migrations: readonly { version: number; sql: string }[] = [
+  { version: 1, sql: authSchema },
+];
 
 export function migrate(db: SqliteDatabase): void {
   db.transaction(() => {

@@ -30,7 +30,7 @@ Open: must failed checks require notes or block completion? Are templates requir
 
 ## Resume here
 
-Foundation slice: health endpoint, database connection/migration lifecycle, isolated integration tests, checks and CI. Next: agree authentication/session contract, then implement authentication with seeded accounts in a separate reviewed slice. Keep this document current after each slice.
+Authentication slice now implements login, refresh, logout and /me, plus development seeds. See AUTHENTICATION.md and openapi.yaml. Access lasts 15 minutes; sessions last 30 days without sliding expiry. Strict consumed-refresh-token reuse revokes the device session; a lost refresh response can require login. The user authorized implementation using these proposed defaults. Docker and HTTPS setup are deferred. Offline local access beyond session expiry remains undecided. Next: confirm inspection domain defaults before assets/assigned-inspection contracts.
 
 ## iOS learning constraints
 
@@ -38,4 +38,8 @@ SwiftUI with modern Observation; feature-first MVVM and Clean Architecture; expl
 
 ## Foundation verification
 
-npm run check passed: strict type checking, ESLint, four API/database integration tests, and production build. Tests cover healthy/unavailable persistence, persistence after reconnect, isolation, foreign keys, and transaction rollback. A real-port smoke test was blocked by the execution sandbox (listen EPERM); HTTP behavior was verified with Fastify injection. CI is configured but has not run remotely. The nested ios/.git directory was subsequently removed at the user’s explicit request, deleting its local Git history and settings while preserving source files. The full workspace is now initialized on main with origin https://github.com/intlrahul/field-ops.git. The initial foundation commit includes the existing iOS project, backend, documentation, and CI workflow. Publishing to the remote is a separate step.
+npm run check passed: strict type checking, ESLint, four API/database integration tests, and production build. Tests cover healthy/unavailable persistence, persistence after reconnect, isolation, foreign keys, and transaction rollback. A real-port smoke test was blocked by the execution sandbox (listen EPERM); HTTP behavior was verified with Fastify injection. CI is configured but has not run remotely. The nested ios/.git directory was subsequently removed at the user’s explicit request, deleting its local Git history and settings while preserving source files. The full workspace is now initialized on main with origin git@github.com:intlrahul/field-ops.git. The initial foundation commit includes the existing iOS project, backend, documentation, and CI workflow. Publishing to the remote is a separate step.
+
+## Authentication verification
+
+npm run check passes with 15 tests covering API/database behavior, refresh replay and concurrent use, session isolation, access/session expiry, logout, account deactivation/current role, validation/rate limiting, seed persistence and rerun safety, and OpenAPI validation. No iOS files changed. Local credentials belong in ignored backend/.env; backend/.env.example documents required values. The runtime now requires AUTH_SECRET; see AUTHENTICATION.md before starting. The user manually tested the authentication flow and authorized committing this slice. Publishing to the remote remains a separate step.

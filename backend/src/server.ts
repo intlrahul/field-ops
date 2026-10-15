@@ -5,8 +5,10 @@ const port = Number(process.env.PORT ?? 3000);
 if (!Number.isInteger(port) || port < 1 || port > 65535) {
   throw new Error('PORT must be an integer between 1 and 65535');
 }
+const secret = process.env.AUTH_SECRET;
+if (!secret || Buffer.byteLength(secret) < 32) throw new Error('Set AUTH_SECRET to at least 32 random bytes');
 const db = openDatabase(process.env.DATABASE_PATH ?? 'data/fieldops.sqlite');
-const app = buildApp(db, true);
+const app = buildApp(db, true, { secret });
 app.addHook('onClose', async () => { db.close(); });
 try {
   migrate(db);
