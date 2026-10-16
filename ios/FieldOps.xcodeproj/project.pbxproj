@@ -6,6 +6,10 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		1F8CA26E3080ED6400A9B106 /* Alamofire in Frameworks */ = {isa = PBXBuildFile; productRef = 1F8CA26D3080ED6400A9B106 /* Alamofire */; };
+/* End PBXBuildFile section */
+
 /* Begin PBXContainerItemProxy section */
 		1F8CA2433080B32100A9B106 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
@@ -52,6 +56,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				1F8CA26E3080ED6400A9B106 /* Alamofire in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -78,6 +83,7 @@
 				1F8CA2373080B31F00A9B106 /* FieldOps */,
 				1F8CA2453080B32100A9B106 /* FieldOpsTests */,
 				1F8CA24F3080B32100A9B106 /* FieldOpsUITests */,
+				1F8CA26C3080ED6400A9B106 /* Frameworks */,
 				1F8CA2363080B31F00A9B106 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -90,6 +96,13 @@
 				1F8CA24C3080B32100A9B106 /* FieldOpsUITests.xctest */,
 			);
 			name = Products;
+			sourceTree = "<group>";
+		};
+		1F8CA26C3080ED6400A9B106 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Frameworks;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -112,6 +125,7 @@
 			);
 			name = FieldOps;
 			packageProductDependencies = (
+				1F8CA26D3080ED6400A9B106 /* Alamofire */,
 			);
 			productName = FieldOps;
 			productReference = 1F8CA2353080B31F00A9B106 /* FieldOps.app */;
@@ -195,6 +209,9 @@
 			);
 			mainGroup = 1F8CA22C3080B31F00A9B106;
 			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				1F8CA26B3080ECB100A9B106 /* XCRemoteSwiftPackageReference "Alamofire" */,
+			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 1F8CA2363080B31F00A9B106 /* Products */;
 			projectDirPath = "";
@@ -388,8 +405,9 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
-				CODE_SIGN_STYLE = Automatic;
+				CODE_SIGN_STYLE = Manual;
 				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = "";
 				ENABLE_APP_SANDBOX = YES;
 				ENABLE_PREVIEWS = YES;
 				ENABLE_USER_SELECTED_FILES = readonly;
@@ -411,6 +429,7 @@
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.myorg.FieldOps;
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = "";
 				REGISTER_APP_GROUPS = YES;
 				SDKROOT = auto;
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
@@ -430,8 +449,9 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
-				CODE_SIGN_STYLE = Automatic;
+				CODE_SIGN_STYLE = Manual;
 				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = "";
 				ENABLE_APP_SANDBOX = YES;
 				ENABLE_PREVIEWS = YES;
 				ENABLE_USER_SELECTED_FILES = readonly;
@@ -453,6 +473,7 @@
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.myorg.FieldOps;
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = "";
 				REGISTER_APP_GROUPS = YES;
 				SDKROOT = auto;
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
@@ -605,6 +626,25 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		1F8CA26B3080ECB100A9B106 /* XCRemoteSwiftPackageReference "Alamofire" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/Alamofire/Alamofire.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 5.12.2;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		1F8CA26D3080ED6400A9B106 /* Alamofire */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 1F8CA26B3080ECB100A9B106 /* XCRemoteSwiftPackageReference "Alamofire" */;
+			productName = Alamofire;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = 1F8CA22D3080B31F00A9B106 /* Project object */;
 }
