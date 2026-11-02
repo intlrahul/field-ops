@@ -81,9 +81,18 @@ struct DashboardScreen: View {
 
             Section {
                 ForEach(Inspection.samples) { inspection in
-                    InspectionRow(inspection: inspection)
-                        .listRowSeparator(.hidden)
-                        .listRowBackground(Color.clear)
+                    Button {
+                        do {
+                            try router.navigate(to: InspectionRoutes.detailsPath(id: inspection.id), mode: .push)
+                        } catch {
+                            navigationError = "This inspection is currently unavailable."
+                        }
+                    } label: {
+                        InspectionRow(inspection: inspection)
+                    }
+                    .buttonStyle(.plain)
+                    .listRowSeparator(.hidden)
+                    .listRowBackground(Color.clear)
                 }
             } header: {
                 Text("Your inspections")
@@ -124,7 +133,9 @@ struct DashboardScreen: View {
     let screens = try! ScreenRegistry(screens: [
         ScreenRoute(DashboardRoutes.path) { _ in DashboardScreen() },
         ScreenRoute(AccountRoutes.path, parent: DashboardRoutes.path) { _ in Text("Account preview") }
-    ])
+    ] + InspectionRoutes.registrations().map {
+        $0.screen(actions: NavigationActions(onSignedOut: {}))
+    })
     let router = screens.makeRouter(authentication: .signedIn)
     try! RouterStack(router: router, screens: screens)
 }

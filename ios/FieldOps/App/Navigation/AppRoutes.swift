@@ -3,6 +3,7 @@
 enum AppRoutes {
     static func registrations(container: AppContainer) -> [FeatureRoute] {
         DashboardRoutes.registrations()
+            + InspectionRoutes.registrations()
             + AccountRoutes.registrations(
                 sessionProvider: container.sessionStore,
                 signoutUseCase: container.authFactory.signoutUseCase()

@@ -26,7 +26,6 @@ struct AppRootView: View {
 
             case .signedIn:
                 signedInStack
-                    .environment(coordinator)
             case .restoringSession:
                 AppLoadingScreen()
             }

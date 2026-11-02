@@ -8,7 +8,7 @@ FieldOpsApp only creates/retains AppComposition and displays its root. App/Depen
 
 Core/Navigation/FeatureRoute.swift contains the shared registration value and NavigationActions callback context. Each registration declares its RouteDefinition and destination once. Screen construction is deferred until callbacks are available, avoiding circular initialization or mutable callback holders. The local PathRouter ScreenRoute(definition:destination:) initializer reuses the same metadata. Features depend on the callback contract, not AppCoordinator.
 
-AppNavigation is generic: it receives a router and registered screens, validates the screen registry, and constructs RouterStack. It contains no screen-specific destination or adapter. Adding another screen to an existing feature changes that feature's registration only. Adding a feature adds one registration entry to AppRoutes' combined list. Neither FieldOpsApp nor AppNavigation needs screen/feature-specific edits. The router and screen registry are constructed from the same feature-owned definitions. Dashboard is /; Account is /account with / as its parent.
+AppNavigation is generic: it receives a router and registered screens, validates the screen registry, and constructs RouterStack. It contains no screen-specific destination or adapter. Adding another screen to an existing feature changes that feature's registration only. Adding a feature adds one registration entry to AppRoutes' combined list. Neither FieldOpsApp nor AppNavigation needs screen/feature-specific edits. The router and screen registry are constructed from the same feature-owned definitions. Dashboard is /; Account is /account and inspection details are /inspections/:id, each with / as parent.
 
 AppCoordinator owns session/root-flow transitions, not a separate navigation path. It updates router authentication on restoration/login and calls resetForSignOut on logout. Restoring without a session preserves a pending link. Successful restoration or login resumes it. Logout discards navigation and pending links. A restoration revision guard prevents an older asynchronous result from replacing a later login/logout UI transition; it does not redesign cancellation or persistence inside session use cases.
 
@@ -30,6 +30,20 @@ This is the official project convention, recorded in decisions/0005-feature-owne
 6. Verify internal navigation and deep links resolve to the same destination, explicit parent/back behavior is correct, invalid parameters/unknown links preserve the stack, and protected links resume after restoration/login but do not survive logout. Keep backend resource authorization checks independent of navigation.
 
 Do not introduce destination wrappers or factory types solely to forward screen constructors. AuthFactory remains at Features/Auth/AuthFactory.swift because it assembles a meaningful authentication dependency graph.
+
+## Worked example: sample inspection details
+
+The first new feature registered through this convention is Inspections. It displays existing Inspection.samples data without networking or a view model.
+
+- New screen: Features/Inspections/Presentation/Screens/InspectionDetailsScreen.swift (title, asset, status, due date, ID; unavailable state for unknown sample IDs).
+- New feature registration: Features/Inspections/Navigation/InspectionRoutes.swift. It declares /inspections/:id with Dashboard (/) as parent, validates nonblank IDs, constructs the screen, and provides detailsPath(id:) with encoded path segments.
+- One entry added to AppRoutes: + InspectionRoutes.registrations().
+- Dashboard rows now navigate through InspectionRoutes.detailsPath(id:) in push mode. Its preview registers the same feature routes.
+- FieldOpsApp, AppComposition, AppNavigation, and AppCoordinator needed no changes.
+
+Test by tapping a Dashboard inspection row, then going back, or opening fieldops://inspections/inspection-001. A protected deep link received while signed out is preserved through login. Inspection IDs in this demo are existing sample IDs, not backend UUIDs. Unknown sample IDs show an unavailable screen; there is no API fallback. The model/sample list is reused from its existing Dashboard location rather than adding a repository abstraction for this demo.
+
+An additional screen within Inspections would only need its screen, a FeatureRoute entry inside InspectionRoutes, and its navigation trigger; AppRoutes would already include the feature.
 
 ## Verification
 
@@ -58,3 +72,5 @@ xcrun simctl openurl booted 'fieldops://account'
 Backend behavior and the deferred offline-sync milestone are unchanged.
 
 Verified on 2026-11-02: simulator app build succeeded; 8 package tests and 4 navigation integration tests passed on iPhone 17 / iOS 26.5. The built Info.plist contains the fieldops URL scheme. Tests use stub restoration and do not prove real-screen gestures or backend login, which remain the manual checks above.
+
+AppCoordinator is deliberately not injected into the SwiftUI environment. AppRootView receives it explicitly; feature views use narrow callbacks (such as onSignedOut) for app-flow transitions. Router remains in the environment for navigation. AccountViewModel/use cases continue to own sign-out work; the callback runs after success.

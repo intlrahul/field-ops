@@ -83,4 +83,35 @@ struct AppNavigationTests {
         #expect(coordinator.flow == .signedOut)
         #expect(coordinator.router.path.isEmpty)
     }
+
+    @Test func inspectionDeepLinkResumesAboveDashboardAfterLogin() async throws {
+        let registrations = DashboardRoutes.registrations() + InspectionRoutes.registrations()
+        let registry = try RouteRegistry(routes: registrations.map(\.definition))
+        let router = Router(registry: registry)
+        let coordinator = AppCoordinator(
+            restoreSessionUseCase: FixedRestoration(result: .signedOut), router: router
+        )
+        let inspection = try #require(Inspection.samples.first)
+        let path = InspectionRoutes.detailsPath(id: inspection.id)
+        coordinator.handleURL(try #require(URL(string: "fieldops://" + path.dropFirst())))
+        await coordinator.start()
+        #expect(coordinator.flow == .signedOut)
+        coordinator.didSignIn()
+        #expect(router.path.map(\.path) == [path])
+        #expect(router.path.first?.parameters["id"] == inspection.id)
+        #expect(try registry.resolve(path).entries.map(\.path) == [DashboardRoutes.path, path])
+        router.back()
+        #expect(router.path.isEmpty)
+    }
+
+    @Test func inspectionPathsEncodeSegmentsAndRejectMalformedParameters() throws {
+        let registrations = DashboardRoutes.registrations() + InspectionRoutes.registrations()
+        let registry = try RouteRegistry(routes: registrations.map(\.definition))
+        let path = InspectionRoutes.detailsPath(id: "sample with space")
+        #expect(path == "/inspections/sample%20with%20space")
+        #expect(try registry.resolve(path).entries.last?.parameters["id"] == "sample with space")
+        #expect(throws: RoutingError.self) { try registry.resolve("/inspections/%20") }
+        #expect(throws: RoutingError.self) { try registry.resolve("/inspections/bad%2Fid") }
+    }
+
 }
