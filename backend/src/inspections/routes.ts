@@ -62,6 +62,12 @@ export async function inspectionRoutes(app: FastifyInstance, db: SqliteDatabase,
       } }, response: { 200: response('InspectionSummaryPage') },
     },
   },async req => service.listInspections(actor(req),req.query));
+  app.get('/inspections/statistics',{
+    schema: {
+      querystring: { type: 'object',additionalProperties: false,properties: {} },
+      response: { 200: response('InspectionStatistics') },
+    },
+  },async req => service.inspectionStatistics(actor(req)));
   app.get<{ Params: { id: string } }>('/inspections/:id',{
     schema: { params: idParams,response: { 200: response('InspectionDetail') } },
   },async req => service.getInspection(actor(req),req.params.id));

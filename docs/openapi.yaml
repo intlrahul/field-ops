@@ -6,6 +6,8 @@ info:
 servers:
   - url: http://localhost:3000
 paths:
+  /inspections/statistics:
+    $ref: './assets-inspections.openapi.json#/paths/~1inspections~1statistics'
   /inspections/{id}/start:
     $ref: './inspection-workflow.openapi.json#/paths/~1inspections~1{id}~1start'
   /inspections/{id}/complete:

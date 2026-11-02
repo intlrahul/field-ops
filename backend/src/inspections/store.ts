@@ -2,7 +2,7 @@ import { readingStatus } from './rules.js';
 import { randomUUID } from 'node:crypto';
 import type { SqliteDatabase } from '../db/database.js';
 import { DomainError } from './errors.js';
-import type { Actor, Asset, AssetInput, InspectionInput, InspectionSummary, InspectionDetail, ListOptions, ChecklistItem, Reading, InspectionNote } from './types.js';
+import type { Actor, Asset, AssetInput, InspectionInput, InspectionSummary, InspectionDetail, ListOptions, ChecklistItem, Reading, InspectionNote, InspectionStatistics } from './types.js';
 
 const assetColumns = `id, asset_tag AS assetTag, name, location, created_at AS createdAt, updated_at AS updatedAt, version`;
 const inspectionColumns = `id, title, status, asset_id AS assetId, asset_tag AS assetTag, asset_name AS assetName,
@@ -57,6 +57,14 @@ export function inspectionStore(db: SqliteDatabase) {
   }
   return {
     getAsset, getInspection,
+    inspectionStatistics(actor: Actor): InspectionStatistics {
+      const access = scope(actor);
+      return db.prepare(`SELECT COUNT(*) AS total,
+        COUNT(CASE WHEN status = 'assigned' THEN 1 END) AS assigned,
+        COUNT(CASE WHEN status = 'in_progress' THEN 1 END) AS inProgress,
+        COUNT(CASE WHEN status = 'completed' THEN 1 END) AS completed
+        FROM inspections WHERE ${access.sql}`).get(...access.params) as InspectionStatistics;
+    },
     createAsset(input: AssetInput, timestamp: string): Asset {
       const id = randomUUID();
       try {

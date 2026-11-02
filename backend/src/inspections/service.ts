@@ -40,6 +40,7 @@ export function inspectionService(db: SqliteDatabase, now: () => number = Date.n
       return store.createInspection({ ...input, dueAt: input.dueAt ? new Date(input.dueAt).toISOString() : null },timestamp());
     },
     getInspection(actor: Actor, id: string) { return store.getInspection(id,actor) ?? notFound(); },
+    inspectionStatistics(actor: Actor) { return store.inspectionStatistics(actor); },
     listInspections(actor: Actor, query: ListQuery) {
       if (actor.role !== 'supervisor' && query.assigneeId !== undefined) supervisor(actor.role);
       const scope = JSON.stringify(['inspections',actor.id,actor.role,query.status ?? null,query.assetId ?? null,query.assigneeId ?? null]);

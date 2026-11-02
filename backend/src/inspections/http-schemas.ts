@@ -1,5 +1,34 @@
 // Request/response schemas for the public assets and inspections contract.
 export const httpSchemas: Record<string, object> = {
+  "InspectionStatistics": {
+    "$id": "domain.InspectionStatistics",
+    "type": "object",
+    "additionalProperties": false,
+    "required": [
+      "total",
+      "assigned",
+      "inProgress",
+      "completed"
+    ],
+    "properties": {
+      "total": {
+        "type": "integer",
+        "minimum": 0
+      },
+      "assigned": {
+        "type": "integer",
+        "minimum": 0
+      },
+      "inProgress": {
+        "type": "integer",
+        "minimum": 0
+      },
+      "completed": {
+        "type": "integer",
+        "minimum": 0
+      }
+    }
+  },
   "AssetCreate": {
     "$id": "domain.AssetCreate",
     "type": "object",

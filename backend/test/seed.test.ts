@@ -24,12 +24,25 @@ test('development seed persists hashed accounts and reruns without resetting the
         email: string; role: string; password_hash: string;
       }[];
       expect(users.map(u => u.role)).toEqual(['supervisor','technician']);
-      expect(db.prepare('SELECT COUNT(*) AS count FROM assets').get()).toEqual({ count: 1 });
-      expect(db.prepare('SELECT COUNT(*) AS count FROM inspections').get()).toEqual({ count: 1 });
+      expect(db.prepare('SELECT COUNT(*) AS count FROM assets').get()).toEqual({ count: 50 });
+      expect(db.prepare('SELECT COUNT(*) AS count FROM inspections').get()).toEqual({ count: 50 });
       expect(db.prepare(`SELECT u.email, i.status, i.asset_tag AS tag FROM inspections i
-        JOIN users u ON u.id = i.assignee_id`).get()).toEqual({
+        JOIN users u ON u.id = i.assignee_id WHERE i.asset_tag = 'DEMO-PUMP-001'`).get()).toEqual({
           email: 'technician@fieldops.test',status: 'assigned',tag: 'DEMO-PUMP-001',
         });
+      expect(db.prepare("SELECT COUNT(*) AS count FROM inspections WHERE due_at IS NULL").get()).toEqual({ count: 10 });
+      expect(db.prepare("SELECT COUNT(*) AS count FROM inspections WHERE due_at < ?").get(new Date().toISOString())).toEqual({ count: 10 });
+      expect(db.prepare('SELECT status, COUNT(*) AS count FROM inspections GROUP BY status ORDER BY status').all()).toEqual([
+        { status: 'assigned',count: 20 },{ status: 'completed',count: 15 },{ status: 'in_progress',count: 15 },
+      ]);
+      expect(db.prepare("SELECT COUNT(*) AS count FROM inspections WHERE status = 'completed' AND (started_at IS NULL OR completed_at IS NULL)").get()).toEqual({ count: 0 });
+      expect(db.prepare(`SELECT COUNT(*) AS count FROM checklist_items c JOIN inspections i ON i.id = c.inspection_id
+        WHERE i.status = 'completed' AND (c.result IS NULL OR c.result != 'pass')`).get()).toEqual({ count: 0 });
+      expect(db.prepare('SELECT COUNT(*) AS count FROM reading_measurements').get()).toEqual({ count: 12 });
+      const before = db.prepare('SELECT id,status,version FROM inspections ORDER BY id').all();
+      seed('replacement-test-password');
+      expect(db.prepare('SELECT id,status,version FROM inspections ORDER BY id').all()).toEqual(before);
+      expect(db.prepare('SELECT COUNT(*) AS count FROM inspection_notes').get()).toEqual({ count: 30 });
       for (const user of users) {
         expect(user.email).toBe(`${user.role}@fieldops.test`);
         expect(user.password_hash).toMatch(/^\$argon2id\$/);

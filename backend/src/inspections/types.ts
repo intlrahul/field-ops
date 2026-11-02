@@ -1,4 +1,5 @@
 export type Actor = { id: string; role: 'supervisor' | 'technician' };
+export type InspectionStatistics = { total: number; assigned: number; inProgress: number; completed: number };
 export type AssetInput = { assetTag: string; name: string; location?: string | null };
 export type AssetSnapshot = { id: string; assetTag: string; name: string; location: string | null };
 export type Asset = AssetSnapshot & { createdAt: string; updatedAt: string; version: number };

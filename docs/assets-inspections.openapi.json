@@ -572,6 +572,79 @@
           }
         }
       }
+    },
+    "/inspections/statistics": {
+      "get": {
+        "operationId": "getInspectionStatistics",
+        "summary": "Count all authorized inspections by status",
+        "description": "Technicians see only their assignments; supervisors see all inspections. Independent of pagination. No query parameters or filters are accepted. Counts are consistent within this response; separate list requests may reflect later changes.",
+        "responses": {
+          "400": {
+            "description": "INVALID_REQUEST: query parameters are not supported",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "UNAUTHORIZED",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "RATE_LIMITED",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "INTERNAL_ERROR",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "Full authorized inspection counts from one database statement. Empty scopes return zero for every field.",
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "no-store"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InspectionStatistics"
+                },
+                "example": {
+                  "total": 42,
+                  "assigned": 20,
+                  "inProgress": 14,
+                  "completed": 8
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -1127,6 +1200,34 @@
       },
       "Error": {
         "$ref": "./openapi.yaml#/components/schemas/Error"
+      },
+      "InspectionStatistics": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "total",
+          "assigned",
+          "inProgress",
+          "completed"
+        ],
+        "properties": {
+          "total": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "assigned": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "inProgress": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "completed": {
+            "type": "integer",
+            "minimum": 0
+          }
+        }
       }
     }
   }

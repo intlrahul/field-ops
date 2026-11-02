@@ -134,3 +134,26 @@ curl -i -X POST http://127.0.0.1:3000/assets \
 ```
 
 Use its returned id and the technician's id from /me in the inspection-creation example above, submitted to POST /inspections with the supervisor bearer token. Calling POST /assets or GET /assets as a technician should return 403. Continue with INSPECTION_WORKFLOW.md to start, record results/readings/notes, and complete the inspection.
+
+### Expanded development examples
+
+The seed now ensures 50 demo assets and one assigned inspection per demo asset (ten numbered units of each equipment type): cooling pump, standby generator, rooftop air handler, fire extinguisher station, and workshop compressor. They belong to technician@fieldops.test. New examples include future due dates, an overdue fire-safety check, a pump check without a due date, checklist definitions, and numeric reading bounds (fire safety has no readings). At the user’s request, untouched demo units 001–004 remain assigned (20), units 005–007 start with one passing checklist result (15 in progress), and units 008–010 complete with passing checks and in-range readings (15 completed). These are synthetic development examples, advanced through the normal workflow service with lifecycle timestamps, versions, measurement history, and notes. Existing work or completed records are never overwritten; the actual distribution can differ after manual use. A fresh seed has ten inspections without due dates, ten overdue, and thirty with future dates, enough for three default 20-item pages. Due dates are relative to the first seed run and are not moved on rerun. Existing account passwords, assignments, results, and notes remain unchanged. Only untouched matching demo inspections in assigned state at version 1 are advanced to their seed scenario. Assets with any existing inspection do not receive another seed inspection.
+
+## Inspection statistics
+
+GET /inspections/statistics requires an active bearer session and returns:
+
+```json
+{"total":42,"assigned":20,"inProgress":14,"completed":8}
+```
+
+Technicians receive counts for all of their assignments; supervisors receive counts for all inspections. All four fields are nonnegative integers and are zero for an empty authorized dataset. total equals assigned + inProgress + completed. Counts use one SQL aggregate statement with the same authorization scope as inspection reads, independent of list pagination. The response uses Cache-Control: no-store. Separate statistics/list requests can observe different database states if work changes between requests; they are not a combined snapshot.
+
+No query parameters are accepted in this initial endpoint. Pagination, status, assetId, assigneeId, and other parameters return 400 INVALID_REQUEST rather than silently altering or narrowing totals. Invalid/missing credentials or an inactive session/user return 401. Standard error envelopes apply. This static path is distinct from /inspections/{id}.
+
+```sh
+curl http://127.0.0.1:3000/inspections/statistics \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
+```
+
+The iOS dashboard now consumes these totals separately from the list and refreshes both. Statistics have independent loading/error/retry handling without substituting partial list counts. See IOS_INSPECTIONS.md.

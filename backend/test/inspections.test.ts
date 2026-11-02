@@ -228,3 +228,56 @@ test('upgrading an authentication-only database preserves existing accounts', ()
     .toEqual([{ version: 1 },{ version: 2 },{ version: 3 }]);
   expect(db.prepare('SELECT COUNT(*) AS count FROM assets').get()).toEqual({ count: 0 });
 });
+
+test('statistics returns zeros for empty scopes and requires an active session', async () => {
+  const f = await fixture();
+  const url = '/inspections/statistics';
+  expect((await f.app.inject({ url })).statusCode).toBe(401);
+  expect((await f.app.inject({ url,headers: { authorization: 'Bearer invalid' } })).statusCode).toBe(401);
+  for (const headers of [f.admin,f.tech,f.other]) {
+    const response = await f.app.inject({ url,headers });
+    expect(response.statusCode).toBe(200);
+    expect(response.headers['cache-control']).toBe('no-store');
+    expect(response.json()).toEqual({ total: 0,assigned: 0,inProgress: 0,completed: 0 });
+  }
+  f.db.prepare('UPDATE users SET active = 0 WHERE id = ?').run(f.users[1]!.id);
+  expect((await f.app.inject({ url,headers: f.tech })).statusCode).toBe(401);
+});
+
+test('statistics counts the complete authorized dataset independently of list pagination and reflects workflow changes', async () => {
+  const f = await fixture();
+  const asset = (await f.createAsset()).json<Asset>();
+  const ids: string[] = [];
+  // More than the default list page; all definitions are optional to allow completion via the real workflow.
+  for (let index = 0; index < 23; index++) {
+    const response = await f.createInspection({ ...f.body(asset.id,index < 21 ? f.users[1]!.id : f.users[2]!.id),
+      checklistItems: [{ label: 'Optional check',required: false }],readingDefinitions: [] });
+    expect(response.statusCode).toBe(201);
+    ids.push(response.json<InspectionDetail>().id);
+  }
+  const stats = async (headers: typeof f.tech) => {
+    const response = await f.app.inject({ url: '/inspections/statistics',headers });
+    expect(response.statusCode).toBe(200);
+    return response.json();
+  };
+  expect((await f.app.inject({ url: '/inspections',headers: f.tech })).json().items).toHaveLength(20);
+  expect(await stats(f.tech)).toEqual({ total: 21,assigned: 21,inProgress: 0,completed: 0 });
+  for (const id of ids.slice(0,2)) {
+    expect((await f.app.inject({ method: 'POST',url: `/inspections/${id}/start`,headers: f.tech })).statusCode).toBe(200);
+  }
+  expect((await f.app.inject({ method: 'POST',url: `/inspections/${ids[0]}/complete`,headers: f.tech })).statusCode).toBe(200);
+  expect(await stats(f.tech)).toEqual({ total: 21,assigned: 19,inProgress: 1,completed: 1 });
+  expect(await stats(f.other)).toEqual({ total: 2,assigned: 2,inProgress: 0,completed: 0 });
+  expect(await stats(f.admin)).toEqual({ total: 23,assigned: 21,inProgress: 1,completed: 1 });
+});
+
+test('statistics rejects pagination, status and scope overrides instead of changing totals', async () => {
+  const f = await fixture();
+  for (const query of ['limit=1','cursor=anything','status=assigned',`assigneeId=${f.users[2]!.id}`,`assetId=${randomUUID()}`]) {
+    for (const headers of [f.tech,f.admin]) {
+      const response = await f.app.inject({ url: `/inspections/statistics?${query}`,headers });
+      expect(response.statusCode).toBe(400);
+      expect(response.json().error.code).toBe('INVALID_REQUEST');
+    }
+  }
+});
