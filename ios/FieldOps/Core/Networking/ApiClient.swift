@@ -19,6 +19,12 @@ protocol APIClient: Sendable {
         body: Body,
         requiresAuthentication: Bool
     ) async throws -> Response
+    
+    func postWithoutResponse<Body: Encodable & Sendable>(
+        path: String,
+        body: Body,
+        requiresAuthentication: Bool
+    ) async throws 
 }
 
 struct AlamofireAPIClient: APIClient {
@@ -79,6 +85,42 @@ struct AlamofireAPIClient: APIClient {
             if let status = response.response?.statusCode,
                !(200..<300).contains(status),
                let data = response.data,
+               let payload = try? JSONDecoder().decode(
+                   APIErrorResponse.self,
+                   from: data
+               ) {
+                throw BackendError(
+                    code: payload.error.code,
+                    message: payload.error.message
+                )
+            }
+
+            throw error
+        }
+    }
+    
+    func postWithoutResponse<Body: Encodable & Sendable>(
+        path: String,
+        body: Body,
+        requiresAuthentication: Bool
+    ) async throws {
+        let response = await AF.request(
+            baseURL.appendingPathComponent(path),
+            method: .post,
+            parameters: body,
+            encoder: JSONParameterEncoder.default
+            // Include your existing prepared headers here.
+        )
+        .validate(statusCode: 200..<300)
+        .serializingData()
+        .response
+
+        switch response.result {
+        case .success:
+            return
+
+        case .failure(let error):
+            if let data = response.data,
                let payload = try? JSONDecoder().decode(
                    APIErrorResponse.self,
                    from: data

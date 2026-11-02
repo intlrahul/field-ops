@@ -27,6 +27,6 @@ struct DefaultSignInUseCase: SignInUseCase {
             password: password
         )
 
-        await sessionWriter.saveSession(session)
+        try await sessionWriter.saveSession(session)
     }
 }

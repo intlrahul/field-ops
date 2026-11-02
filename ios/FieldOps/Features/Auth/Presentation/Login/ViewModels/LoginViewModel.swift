@@ -11,7 +11,7 @@ import Foundation
 @MainActor
 @Observable
 final class LoginViewModel {
-    var email = ""
+    var email = "technician@fieldops.test"
     var password = ""
 
     private(set) var isLoading = false

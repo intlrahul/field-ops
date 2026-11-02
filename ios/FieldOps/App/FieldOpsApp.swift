@@ -9,7 +9,7 @@ import SwiftUI
 
 @main
 struct FieldOpsApp: App {
-    @State private var coordinator = AppCoordinator()
+    @State private var coordinator: AppCoordinator
     private let container: AppContainer
 
     init() {
@@ -17,12 +17,22 @@ struct FieldOpsApp: App {
             fatalError("Invalid API base URL configuration")
         }
 
-        container = AppContainer(baseURL: baseURL)
+        let container = AppContainer(baseURL: baseURL)
+        self.container = container
+
+        _coordinator = State(
+            initialValue: AppCoordinator(
+                restoreSessionUseCase: container.authFactory.restoreSessionUseCase
+            )
+        )
     }
 
     var body: some Scene {
         WindowGroup {
-            AppRootView(coordinator: coordinator, container: container)
+            AppRootView(
+                coordinator: coordinator,
+                container: container
+            )
         }
     }
 }

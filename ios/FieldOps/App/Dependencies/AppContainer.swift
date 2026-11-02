@@ -9,35 +9,33 @@ import Foundation
 
 @MainActor
 final class AppContainer {
-    let sessionStore: SessionStore
-    let apiClient: AlamofireAPIClient
-    let authRepository: RemoteAuthRepository
+    let apiClient: any APIClient
+    let authFactory: AuthFactory
+    let sessionStore: any SessionProvider & SessionWriter
 
     init(baseURL: URL) {
-        let sessionStore = SessionStore()
 
-        let apiClient = AlamofireAPIClient(
+        let storage = KeychainStorage(
+            service: "com.yourcompany.FieldOps"
+        )
+
+        let persistence = DefaultSessionPersistence(
+            storage: storage
+        )
+
+        sessionStore = SessionStore(
+            persistence: persistence
+        )
+
+        apiClient = AlamofireAPIClient(
             baseURL: baseURL,
             accessTokenProvider: sessionStore
         )
 
-        let authRepository = RemoteAuthRepository(
-            apiClient: apiClient
-        )
-
-        self.sessionStore = sessionStore
-        self.apiClient = apiClient
-        self.authRepository = authRepository
-    }
-
-    func loginViewModel() -> LoginViewModel {
-        let repository = RemoteAuthRepository(apiClient: apiClient)
-
-        let useCase = DefaultSignInUseCase(
-            authRepository: repository,
+        authFactory = AuthFactory(
+            apiClient: apiClient,
+            sessionProvider: sessionStore,
             sessionWriter: sessionStore
         )
-
-        return LoginViewModel(signInUseCase: useCase)
     }
 }

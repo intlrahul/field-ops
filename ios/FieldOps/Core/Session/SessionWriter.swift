@@ -6,6 +6,6 @@
 //
 
 protocol SessionWriter: Sendable {
-    func saveSession(_ session: Session) async
-    func clearSession() async
+    func saveSession(_ session: Session) async throws
+    func clearSession() async throws
 }

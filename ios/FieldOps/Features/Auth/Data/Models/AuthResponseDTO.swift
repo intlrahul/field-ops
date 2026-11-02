@@ -1,5 +1,5 @@
 //
-//  LoginResponseDTO.swift
+//  AuthResponseDTO.swift
 //  FieldOps
 //
 //  Created by Rahul Singh on 15/10/26.
@@ -7,7 +7,11 @@
 
 import Foundation
 
-nonisolated struct LoginResponseDTO: Decodable, Sendable {
+enum AuthMappingError: Error {
+    case invalidTimestamp(String)
+}
+
+nonisolated struct AuthResponseDTO: Decodable, Sendable {
     let tokenType: String
     let accessToken: String
     let refreshToken: String
@@ -16,12 +20,15 @@ nonisolated struct LoginResponseDTO: Decodable, Sendable {
     let user: UserDTO
 }
 
-enum AuthMappingError: Error {
-    case invalidTimestamp(String)
-}
-
-extension LoginResponseDTO {
+extension AuthResponseDTO {
     func toDomain() throws -> Session {
+        Session(
+            user: user.toDomain(),
+            credentials: try toCredentials()
+        )
+    }
+
+    func toCredentials() throws -> Credentials {
         let formatter = ISO8601DateFormatter()
         formatter.formatOptions = [
             .withInternetDateTime,
@@ -47,14 +54,12 @@ extension LoginResponseDTO {
             return date
         }
 
-        return Session(
-            user: user.toDomain(),
-            credentials: Credentials(
-                accessToken: accessToken,
-                refreshToken: refreshToken,
-                accessTokenExpiresAt: try parseDate(accessTokenExpiresAt),
-                sessionExpiresAt: try parseDate(sessionExpiresAt)
-            )
+        return Credentials(
+            tokenType: tokenType,
+            accessToken: accessToken,
+            refreshToken: refreshToken,
+            accessTokenExpiresAt: try parseDate(accessTokenExpiresAt),
+            sessionExpiresAt: try parseDate(sessionExpiresAt)
         )
     }
 }

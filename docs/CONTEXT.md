@@ -65,3 +65,7 @@ Implemented POST start/complete, PUT checklist-item result, PUT reading value, a
 ## iOS login integration
 
 The user implemented and manually verified login against the backend, then requested a commit. The iOS changes include login DTOs/repository/use case/presentation, session storage boundaries, app dependency injection/navigation, networking/error types, and Alamofire dependency configuration with Package.resolved. The assistant did not generate or modify Swift code for this commit. Verification is the user's successful login test; no iOS build or automated tests were run by the assistant. Local .env remains excluded. Offline synchronization remains explicitly deferred.
+
+## iOS session and account integration — 2026-11-02
+
+User requested committing session restoration/persistence with Keychain storage, refresh/signout use cases, account UI, app loading/navigation/factory changes, and dashboard presentation work. The prefilled login password was cleared before committing with the user’s go-ahead. No iOS build or automated tests were run for this commit; local .env is excluded. Offline synchronization remains deferred.

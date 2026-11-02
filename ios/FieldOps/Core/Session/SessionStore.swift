@@ -7,29 +7,37 @@
 
 actor SessionStore: SessionProvider, SessionWriter {
     private var session: Session?
-    
-    init(session: Session? = nil) {
-        self.session = session
-    }
-    
-    func saveSession(_ session: Session) async {
-        self.session = session
-    }
+    private var persistence: SessionPersistence
 
-    func refreshToken() async -> String? {
-        session?.credentials.refreshToken
+    init(session: Session? = nil, persistence: SessionPersistence) {
+        self.session = session
+        self.persistence = persistence
     }
-
+    
+    func credentials() async -> Credentials? {
+        session?.credentials
+    }
+    
     func currentUser() async -> User? {
         session?.user
     }
-
+    
     func accessToken() async -> String? {
         session?.credentials.accessToken
     }
     
-    func clearSession() async {
+    func restoreSession() async throws {
+        self.session = try await persistence.getSession()
+    }
+
+    func saveSession(_ session: Session) async throws {
+        self.session = session
+        try await persistence.save(session: session)
+    }
+
+    func clearSession() async throws {
         session = nil
+        try await persistence.clearSession()
     }
 
 }

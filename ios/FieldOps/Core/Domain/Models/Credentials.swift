@@ -7,7 +7,8 @@
 
 import Foundation
 
-struct Credentials: Sendable {
+nonisolated struct Credentials: Sendable, Codable {
+    let tokenType: String
     let accessToken: String
     let refreshToken: String
     let accessTokenExpiresAt: Date

@@ -6,6 +6,7 @@
 //
 
 protocol SessionProvider: AccessTokenProvider {
-    func refreshToken() async -> String?
+    func restoreSession() async throws
+    func credentials() async -> Credentials?
     func currentUser() async -> User?
 }

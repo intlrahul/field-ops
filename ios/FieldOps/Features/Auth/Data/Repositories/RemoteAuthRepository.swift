@@ -6,6 +6,7 @@
 //
 
 struct RemoteAuthRepository: AuthRepository {
+    
     private let apiClient: any APIClient
 
     init(apiClient: any APIClient) {
@@ -16,7 +17,8 @@ struct RemoteAuthRepository: AuthRepository {
         email: String,
         password: String
     ) async throws -> Session {
-        let response: LoginResponseDTO = try await apiClient.post(
+        try await Task.sleep(for: .seconds(4))
+        let response: AuthResponseDTO = try await apiClient.post(
             path: "auth/login",
             body: LoginRequestDTO(
                 email: email,
@@ -26,5 +28,23 @@ struct RemoteAuthRepository: AuthRepository {
         )
 
         return try response.toDomain()
+    }
+    
+    func refreshSession(refreshToken: String) async throws -> Session {
+        let response: AuthResponseDTO = try await apiClient.post(
+            path: "auth/refresh",
+            body: RefreshTokenRequestDTO(refreshToken: refreshToken),
+            requiresAuthentication: false
+        )
+
+        return try response.toDomain()
+    }
+    
+    func signOut(refreshToken: String) async throws {
+        try await apiClient.postWithoutResponse(
+            path: "auth/logout",
+            body: RefreshTokenRequestDTO(refreshToken: refreshToken),
+            requiresAuthentication: false
+        )
     }
 }

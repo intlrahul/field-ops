@@ -16,7 +16,7 @@ struct AppRootView: View {
             switch coordinator.flow {
             case .signedOut:
                 LoginScreen(
-                    viewModel: container.loginViewModel(),
+                    viewModel: container.authFactory.loginViewModel(),
                     onSignedIn: {
                         coordinator.didSignIn()
                     }
@@ -25,10 +25,13 @@ struct AppRootView: View {
             case .signedIn:
                 NavigationStack {
                     DashboardScreen()
+                        .navigationDestination(for: SignedRoute.self) { route in
+                            signedInDestination(for: route)
+                        }
                 }
             case .restoringSession:
-                ProgressView("Restoring session…")
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                AppLoadingScreen()
+
             }
         }.task {
             await coordinator.start()
