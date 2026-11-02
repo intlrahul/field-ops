@@ -10,6 +10,7 @@
 		1F8CA26E3080ED6400A9B106 /* Alamofire in Frameworks */ = {isa = PBXBuildFile; productRef = 1F8CA26D3080ED6400A9B106 /* Alamofire */; };
 		F10A00000000000000000001 /* PathRouterUI in Frameworks */ = {isa = PBXBuildFile; productRef = F10A00000000000000000002 /* PathRouterUI */; };
 		F10A00000000000000000003 /* PathRouter in Frameworks */ = {isa = PBXBuildFile; productRef = F10A00000000000000000004 /* PathRouter */; };
+		F10A00000000000000000005 /* Prism in Frameworks */ = {isa = PBXBuildFile; productRef = F10A00000000000000000006 /* Prism */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -61,6 +62,7 @@
 				1F8CA26E3080ED6400A9B106 /* Alamofire in Frameworks */,
 				F10A00000000000000000001 /* PathRouterUI in Frameworks */,
 				F10A00000000000000000003 /* PathRouter in Frameworks */,
+				F10A00000000000000000005 /* Prism in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -132,6 +134,7 @@
 				1F8CA26D3080ED6400A9B106 /* Alamofire */,
 				F10A00000000000000000002 /* PathRouterUI */,
 				F10A00000000000000000004 /* PathRouter */,
+				F10A00000000000000000006 /* Prism */,
 			);
 			productName = FieldOps;
 			productReference = 1F8CA2353080B31F00A9B106 /* FieldOps.app */;
@@ -216,6 +219,7 @@
 			mainGroup = 1F8CA22C3080B31F00A9B106;
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
+				F10A00000000000000000007 /* XCLocalSwiftPackageReference "local_dependencies/Prism" */,
 				1F8CA26B3080ECB100A9B106 /* XCRemoteSwiftPackageReference "Alamofire" */,
 				1F8CA325309898A700A9B106 /* XCLocalSwiftPackageReference "local_dependencies/PathRouter" */,
 			);
@@ -641,6 +645,10 @@
 			isa = XCLocalSwiftPackageReference;
 			relativePath = local_dependencies/PathRouter;
 		};
+		F10A00000000000000000007 /* XCLocalSwiftPackageReference "local_dependencies/Prism" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = local_dependencies/Prism;
+		};
 /* End XCLocalSwiftPackageReference section */
 
 /* Begin XCRemoteSwiftPackageReference section */
@@ -669,6 +677,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 1F8CA325309898A700A9B106 /* XCLocalSwiftPackageReference "local_dependencies/PathRouter" */;
 			productName = PathRouter;
+		};
+		F10A00000000000000000006 /* Prism */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = F10A00000000000000000007 /* XCLocalSwiftPackageReference "local_dependencies/Prism" */;
+			productName = Prism;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

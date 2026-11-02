@@ -37,3 +37,5 @@ Health, authentication, assets, and assigned-inspection creation/list/details AP
 Repository layout: ios/ contains the existing iOS project; backend/ contains the API; docs/ holds the contract and persistent design context. CI is defined at .github/workflows/backend.yml. The full project is initialized as one Git repository at the workspace root, with origin git@github.com:intlrahul/field-ops.git. The previous nested ios/.git repository was removed at the user’s request. CI runs after the workflow is committed and pushed to GitHub.
 
 For the iOS routing integration and deep-link checks, see [iOS navigation](docs/IOS_NAVIGATION.md).
+
+The shared iOS components, theme, typography, and styling convention are documented in [DESIGN_SYSTEM.md](docs/DESIGN_SYSTEM.md). The design system lives in the local [Prism package](ios/local_dependencies/Prism). Open PrismCatalog in Xcode previews to review the palette and component states.

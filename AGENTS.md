@@ -26,3 +26,11 @@ Read docs/IOS_NAVIGATION.md and docs/decisions/0005-feature-owned-navigation.md 
 - Keep loading/login outside the protected RouterStack. Preserve pending links through restoration/login; clear history and pending links on actual logout. Navigation guards do not replace backend authorization.
 - Do not add a destination wrapper or per-feature factory merely for forwarding constructors. Retain factories/assemblies when they compose a meaningful dependency graph (as AuthFactory does).
 - Verify relevant route resolution, auth handoff, back navigation, and logout behavior when changes affect them. Document manual gesture/cold-launch checks separately from automated test results.
+
+## Required iOS design-system convention
+
+- Read docs/DESIGN_SYSTEM.md before creating or styling UI. Use ios/local_dependencies/Prism/Sources/Prism components and semantic tokens; do not duplicate colors, font sizes, radii, field/button/card styling in feature screens.
+- Native SwiftUI layout, navigation bars, alerts, and confirmation dialogs remain native. Do not wrap every primitive or invent controls without a real use case.
+- Keep domain mapping, content, navigation, and view models in features. Design-system components must not depend on feature models, repositories, Router, AppCoordinator, or AppContainer.
+- Apply the theme outside the app's loading/login/navigation branches. Preserve Dynamic Type, light/dark/contrast variants, minimum touch targets, labels beyond color, secure-field behavior, and reduced-motion handling.
+- Add/update the component catalog and run scripts/check_design_system.py when palette roles change. A generic-device compile is permitted; do not launch the simulator or run simulator tests. Manual visual/accessibility verification belongs to the user.

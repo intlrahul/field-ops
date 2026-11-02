@@ -16,3 +16,7 @@ Authentication uses Argon2id password hashes, jose-signed access tokens, and has
 ## iOS navigation convention
 
 The official route-registration procedure is docs/IOS_NAVIGATION.md (relative to the project root), with ADR 0005. Features/<Feature>/Navigation owns single FeatureRoute entries pairing metadata and deferred screen construction. App/Navigation/AppRoutes is the sole combined feature list. App/Dependencies/AppComposition owns generic dependency/lifecycle composition; FieldOpsApp and AppNavigation contain no feature-specific registration logic. Features use explicit dependencies and NavigationActions rather than AppContainer/AppCoordinator. User, Session, and Credentials are owned by Features/Auth/Domain/Entities and intentionally consumed by Account and shared session infrastructure. AuthFactory remains; Account's forwarding factory/destination wrapper were removed.
+
+## iOS design system
+
+ios/local_dependencies/Prism/Sources/Prism owns semantic assets/tokens, Dynamic Type typography, theme environment, reusable components, and a preview catalog. Current app screens consume it; feature/domain/navigation responsibilities stay outside it. FieldOpsApp applies the system-following default theme once. Native navigation/dialog surfaces retain platform behavior. See DESIGN_SYSTEM.md and ADR 0006 for required authoring conventions and verification limits. The user handles simulator/visual testing.

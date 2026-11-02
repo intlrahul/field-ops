@@ -1,7 +1,13 @@
-//
-//  DashboardSummaryView.swift
-//  FieldOps
-//
-//  Created by Rahul Singh on 18/10/26.
-//
+import Prism
+import SwiftUI
 
+struct DashboardSummaryView: View {
+    let inspections: [Inspection]
+
+    var body: some View {
+        DSStatGrid(items: InspectionStatus.allCases.map { status in
+            DSStatistic(id: status.rawValue, title: status.title,
+                        value: String(inspections.filter { $0.status == status }.count), symbol: status.symbol)
+        })
+    }
+}

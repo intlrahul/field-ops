@@ -1,3 +1,4 @@
+import Prism
 import SwiftUI
 
 @main
@@ -22,6 +23,7 @@ struct FieldOpsApp: App {
                 container: composition.container,
                 signedInStack: composition.navigation.stack
             )
+            .designTheme()
         }
     }
 }

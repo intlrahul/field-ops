@@ -1,72 +1,42 @@
-//
-//  InspectionRow.swift
-//  FieldOps
-//
-//  Created by Rahul Singh on 18/10/26.
-//
-
+import Prism
 import SwiftUI
 
+extension InspectionStatus {
+    var tone: DSTone {
+        switch self {
+        case .assigned: .info
+        case .inProgress: .warning
+        case .completed: .success
+        }
+    }
+
+    var symbol: String {
+        switch self {
+        case .assigned: "clipboard"
+        case .inProgress: "clock"
+        case .completed: "checkmark.circle"
+        }
+    }
+}
+
+/// Feature content; the shared navigation card owns surface and interaction styling.
 struct InspectionRow: View {
     let inspection: Inspection
 
-    private var statusColor: Color {
-        switch inspection.status {
-        case .assigned: .blue
-        case .inProgress: .orange
-        case .completed: .green
-        }
-    }
-
-    private var isOverdue: Bool {
-        inspection.status != .completed &&
-        inspection.dueDate < .now
-    }
+    private var isOverdue: Bool { inspection.status != .completed && inspection.dueDate < .now }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 14) {
-            Text(inspection.status.title)
-                .font(.caption.weight(.semibold))
-                .foregroundStyle(statusColor)
-                .padding(.horizontal, 10)
-                .padding(.vertical, 5)
-                .background(
-                    statusColor.opacity(0.12),
-                    in: Capsule()
-                )
-
-            VStack(alignment: .leading, spacing: 6) {
-                Text(inspection.title)
-                    .font(.headline)
-                    .foregroundStyle(.primary)
-                    .fixedSize(horizontal: false, vertical: true)
-
-                Label(inspection.assetName, systemImage: "shippingbox")
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
+        VStack(alignment: .leading, spacing: DSSpacing.sm) {
+            DSBadge(title: inspection.status.title, tone: inspection.status.tone, symbol: inspection.status.symbol)
+            DSText(inspection.title, style: .subheading)
+            DSText(inspection.assetName, style: .callout, tone: .secondary)
+            DSDivider()
+            let date = inspection.dueDate.formatted(date: .abbreviated, time: .omitted)
+            if isOverdue {
+                DSBadge(title: "Overdue · \(date)", tone: .danger, symbol: "calendar.badge.exclamationmark")
+            } else {
+                DSText("Due \(date)", style: .caption, tone: .secondary)
             }
-
-            Divider()
-
-            HStack(spacing: 6) {
-                Image(systemName: "calendar")
-
-                Text(isOverdue ? "Overdue ·" : "Due")
-
-                Text(inspection.dueDate, format: .dateTime.day().month().year())
-            }
-            .font(.caption)
-            .foregroundStyle(isOverdue ? Color.red : Color.secondary)
-        }
-        .padding(18)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(
-            Color(.secondarySystemGroupedBackground),
-            in: RoundedRectangle(cornerRadius: 18)
-        )
-        .overlay {
-            RoundedRectangle(cornerRadius: 18)
-                .strokeBorder(Color.primary.opacity(0.08), lineWidth: 1)
         }
     }
 }

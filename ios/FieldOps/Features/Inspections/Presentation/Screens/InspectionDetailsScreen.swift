@@ -1,28 +1,32 @@
+import Prism
 import SwiftUI
 
 struct InspectionDetailsScreen: View {
     let inspection: Inspection?
 
     var body: some View {
-        Group {
+        DSScreen {
             if let inspection {
-                Form {
-                    Section("Inspection") {
-                        LabeledContent("Title", value: inspection.title)
-                        LabeledContent("Asset", value: inspection.assetName)
-                        LabeledContent("Status", value: inspection.status.title)
-                        LabeledContent("Due date") {
-                            Text(inspection.dueDate, format: .dateTime.day().month().year())
+                VStack(alignment: .leading, spacing: DSSpacing.sm) {
+                    DSBadge(title: inspection.status.title, tone: inspection.status.tone, symbol: inspection.status.symbol)
+                    DSText(inspection.title, style: .title)
+                    DSText(inspection.assetName, tone: .secondary)
+                }
+                DSSection("Inspection") {
+                    DSCard {
+                        VStack(spacing: DSSpacing.md) {
+                            DSFieldRow(title: "Asset", value: inspection.assetName, symbol: "shippingbox")
+                            DSDivider()
+                            DSFieldRow(title: "Due date", value: inspection.dueDate.formatted(date: .abbreviated, time: .omitted), symbol: "calendar")
+                            DSDivider()
+                            DSFieldRow(title: "Inspection ID", value: inspection.id, symbol: "number")
                         }
-                        LabeledContent("ID", value: inspection.id)
                     }
                 }
             } else {
-                ContentUnavailableView(
-                    "Inspection not found",
-                    systemImage: "doc.text.magnifyingglass",
-                    description: Text("This inspection is not available in the current sample data.")
-                )
+                DSEmptyState(title: "Inspection not found",
+                             message: "This inspection is not available in the current sample data.",
+                             symbol: "doc.text.magnifyingglass")
             }
         }
         .navigationTitle("Inspection details")
@@ -31,7 +35,5 @@ struct InspectionDetailsScreen: View {
 }
 
 #Preview {
-    NavigationStack {
-        InspectionDetailsScreen(inspection: Inspection.samples.first)
-    }
+    NavigationStack { InspectionDetailsScreen(inspection: Inspection.samples.first) }.designTheme()
 }
