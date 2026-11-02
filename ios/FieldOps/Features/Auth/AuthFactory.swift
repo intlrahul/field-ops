@@ -7,23 +7,23 @@
 
 @MainActor
 struct AuthFactory {
+    private let sessionProvider: any SessionProvider
+    private let sessionWriter: any SessionWriter
+
     let authRepository: any AuthRepository
     let restoreSessionUseCase: any RestoreSessionUseCase
     let refreshSessionUseCase: any RefreshSessionUseCase
-    private let sessionProvider: any SessionProvider
-    private let sessionWriter: any SessionWriter
 
     init(
         apiClient: any APIClient,
         sessionProvider: any SessionProvider,
         sessionWriter: any SessionWriter,
     ) {
-        self.authRepository = RemoteAuthRepository(
-            apiClient: apiClient
-        )
         self.sessionWriter = sessionWriter
         self.sessionProvider = sessionProvider
         
+        self.authRepository = RemoteAuthRepository(apiClient: apiClient)
+
         refreshSessionUseCase = DefaultRefreshSessionUseCase(
             authRepository: authRepository,
             sessionProvider: sessionProvider,
@@ -36,7 +36,7 @@ struct AuthFactory {
             refreshSessionUseCase: refreshSessionUseCase,
         )
     }
-    
+
     func signoutUseCase() -> any SignoutUseCase {
         DefaultSignoutUseCase(
             authRepository: authRepository,
