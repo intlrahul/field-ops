@@ -1,6 +1,10 @@
 # Persistent project context
 
-Updated: 2026-10-15
+Updated: 2026-11-02
+
+## Current iOS structure — authoritative
+
+Route additions must follow IOS_NAVIGATION.md and decisions/0005-feature-owned-navigation.md (also enforced by AGENTS.md). FeatureRoute entries live in Features/<Feature>/Navigation; the sole combined feature list is App/Navigation/AppRoutes.swift. AppComposition lives in App/Dependencies. FieldOpsApp and generic AppNavigation do not change for routine route additions. Account constructs its screen/view model directly with explicit dependencies and NavigationActions; AccountFactory/AccountDestination are removed. AuthFactory remains at Features/Auth/AuthFactory.swift. Auth owns User/Session/Credentials under Domain/Entities. This summary supersedes earlier intermediate arrangements recorded below. The user authorized committing the navigation refactor and this convention; publishing is separate.
 
 ## Confirmed requirements
 
@@ -69,3 +73,36 @@ The user implemented and manually verified login against the backend, then reque
 ## iOS session and account integration — 2026-11-02
 
 User requested committing session restoration/persistence with Keychain storage, refresh/signout use cases, account UI, app loading/navigation/factory changes, and dashboard presentation work. The prefilled login password was cleared before committing with the user’s go-ahead. No iOS build or automated tests were run for this commit; local .env is excluded. Offline synchronization remains deferred.
+
+
+## PathRouter integration — 2026-11-02
+
+The user explicitly authorized implementing the iOS navigation migration after adding/compiling the local package. AppNavigation retains a single registry/router/stack, with Dashboard at / and Account at /account. The coordinator retains session/root-flow control and updates router authentication on restoration/login/logout. The old SignedRoute, destination switch, path/pending state, and custom parser are removed. Protected links received during loading/login resume after authentication; actual logout clears them. A transition revision guard prevents late restoration results overriding a later UI login/logout transition. The package products are linked and Configuration/Info.plist registers the fieldops scheme. Universal links and inspection-detail routing remain outside this slice. See IOS_NAVIGATION.md for architecture and manual checks. Backend behavior and the sync deferral are unchanged. Changes are not committed.
+
+PathRouter verification: simulator app build succeeded, all 8 package tests passed, and all 4 new AppNavigationTests passed on iPhone 17 (iOS 26.5), including a final run after correcting an explicit module import. The built app's Info.plist contains the fieldops scheme. Interactive gesture and real-screen login/deep-link checks remain manual; see IOS_NAVIGATION.md. No backend changes or tests were needed for this slice.
+
+Account navigation assembly: AccountDestination now lives under Features/Account/Assembly/Navigation, taking AccountFactory and an onSignedOut closure. AppNavigation keeps a small AccountRouteBoundary that adapts the app coordinator to the callback, keeping the feature destination independent of AppCoordinator.
+
+
+Feature-owned route registration refactor: AccountRoutes and DashboardRoutes own metadata and screen assembly. AccountDestination remains in the Account feature with an injected onSignedOut closure; AccountRouteBoundary has been removed. AppNavigation now only combines an existing router and screen registrations. FieldOpsApp creates route metadata/router, then coordinator, then screen builders with weak coordinator callbacks. PathRouter gained ScreenRoute(definition:destination:) for shared feature metadata. New screens in an existing feature do not require AppNavigation edits. This supersedes the earlier adapter-based arrangement.
+
+Feature-registration verification: rebuilt the app and ran all 4 AppNavigationTests successfully on iPhone 17 / iOS 26.5; all 8 PathRouter package tests also passed. Changes remain uncommitted. Manual screen/gesture checks from IOS_NAVIGATION.md still apply.
+
+
+App composition refinement: FieldOpsApp now only retains AppComposition and displays its root. App/Dependencies/AppComposition owns dependency construction and a single feature-registration list. Features return FeatureRoute values (Core/Navigation) that pair route definitions with deferred destination builders accepting NavigationActions. Metadata is derived from the same list used to materialize screens after router/coordinator construction. Account sign-out is a weak coordinator callback; features remain independent of AppCoordinator. A new screen changes its feature only; a new feature adds one entry in AppComposition. FieldOpsApp and generic AppNavigation remain unchanged. This supersedes the previous parallel metadata/screen lists in FieldOpsApp.
+
+AppComposition verification: simulator build and all 4 AppNavigationTests passed after the single-registration refactor. No package source changes were needed in this final refinement; the previously verified shared-definition initializer is reused. Manual gesture/login checks remain documented. Changes are uncommitted.
+
+Factory simplification: at the user's request, AccountFactory and its feature-side AppContainer extension were removed. AppComposition supplies SessionProvider and SignoutUseCase directly to AccountRoutes, which forwards them with onSignedOut to AccountDestination. The destination constructs AccountViewModel only as its screen is rendered; AccountScreen retains it in State. AuthFactory is retained because it assembles the repository and shared refresh/restoration use cases as well as login/sign-out dependencies. No blanket factory-per-feature requirement remains.
+
+Factory simplification verification: simulator build and all 4 AppNavigationTests passed. No AccountFactory/accountFactory references remain in iOS source. Changes are uncommitted.
+
+Feature navigation simplification: AccountDestination was removed. AccountRoutes now constructs AccountScreen and its AccountViewModel directly in the deferred route builder, preserving screen State ownership and injected sign-out callbacks. AccountRoutes and DashboardRoutes moved from Features/<Feature>/Assembly/Navigation to Features/<Feature>/Navigation. AuthFactory remains in Auth/Assembly. This supersedes prior AccountDestination/folder descriptions; no app composition changes are needed.
+
+Folder preference: AppComposition.swift now lives beside AppContainer in App/Dependencies. AppNavigation remains in App/Navigation. This is a file move only; composition behavior is unchanged.
+
+Registration-list extraction: App/Navigation/AppRoutes.swift now owns the combined feature registrations. AppComposition calls AppRoutes.registrations(container:) without naming features. New screens change feature routes; new feature registrations change AppRoutes. Shared dependency/lifecycle changes may still require AppComposition edits.
+
+Auth entity ownership: at the user's request, User.swift, Session.swift, and Credentials.swift moved from Core/Domain/Models to Features/Auth/Domain/Entities. Auth owns these domain types; Account and shared session infrastructure intentionally consume them. The app remains a single Swift target, so no import/access-control changes were required. Session storage/persistence and networking remain in Core. File contents and runtime behavior are unchanged.
+
+Navigation convention commit verification: final simulator build and all 4 AppNavigationTests passed after the final folder/entity moves. The 8 package tests passed during this integration. Local credentials/generated output are excluded; the URL-encoding alphabet in PathRouter was checked as a benign credential substring match. Official route authoring is recorded in AGENTS.md, IOS_NAVIGATION.md, ARCHITECTURE.md, and ADR 0005. The user authorized the commit; no push is included.

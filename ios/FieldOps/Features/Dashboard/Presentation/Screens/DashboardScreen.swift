@@ -6,8 +6,11 @@
 //
 
 import SwiftUI
+import PathRouterUI
 
 struct DashboardScreen: View {
+    @Environment(Router.self) private var router
+    @State private var navigationError: String?
     private let summary = [
         "Assigned count": "10",
         "In-progress count": "13",
@@ -87,12 +90,26 @@ struct DashboardScreen: View {
                     .font(.title2.bold())
             }
         }
+        .alert("Unable to navigate", isPresented: Binding(
+            get: { navigationError != nil },
+            set: { if !$0 { navigationError = nil } }
+        )) {
+            Button("OK", role: .cancel) { navigationError = nil }
+        } message: {
+            Text(navigationError ?? "")
+        }
         .listStyle(.plain)
         .scrollContentBackground(.hidden)
         .background(Color(.systemGroupedBackground))
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
-                Button(action: {}) {
+                Button(action: {
+                    do {
+                        try router.navigate(to: AccountRoutes.path, mode: .push)
+                    } catch {
+                        navigationError = "Account is currently unavailable."
+                    }
+                }) {
                     Image(systemName: "person.crop.circle")
                 }
                 .accessibilityLabel("Account")
@@ -104,7 +121,10 @@ struct DashboardScreen: View {
 }
 
 #Preview {
-    NavigationStack {
-        DashboardScreen()
-    }
+    let screens = try! ScreenRegistry(screens: [
+        ScreenRoute(DashboardRoutes.path) { _ in DashboardScreen() },
+        ScreenRoute(AccountRoutes.path, parent: DashboardRoutes.path) { _ in Text("Account preview") }
+    ])
+    let router = screens.makeRouter(authentication: .signedIn)
+    try! RouterStack(router: router, screens: screens)
 }

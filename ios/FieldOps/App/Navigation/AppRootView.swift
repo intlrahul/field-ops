@@ -6,10 +6,12 @@
 //
 
 import SwiftUI
+import PathRouterUI
 
 struct AppRootView: View {
     let coordinator: AppCoordinator
     let container: AppContainer
+    let signedInStack: RouterStack
 
     var body: some View {
         Group {
@@ -23,18 +25,16 @@ struct AppRootView: View {
                 )
 
             case .signedIn:
-                NavigationStack {
-                    DashboardScreen()
-                        .navigationDestination(for: SignedRoute.self) { route in
-                            signedInDestination(for: route)
-                        }
-                }
+                signedInStack
+                    .environment(coordinator)
             case .restoringSession:
                 AppLoadingScreen()
-
             }
         }.task {
             await coordinator.start()
+        }
+        .onOpenURL { url in
+            coordinator.handleURL(url)
         }
     }
 }
