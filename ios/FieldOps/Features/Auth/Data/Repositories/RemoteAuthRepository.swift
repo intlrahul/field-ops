@@ -40,11 +40,10 @@ struct RemoteAuthRepository: AuthRepository {
         return try response.toDomain()
     }
     
-    func signOut(refreshToken: String) async throws {
+    func signOut() async throws {
         try await apiClient.postWithoutResponse(
             path: "auth/logout",
-            body: RefreshTokenRequestDTO(refreshToken: refreshToken),
-            requiresAuthentication: false
+            requiresAuthentication: true
         )
     }
 }

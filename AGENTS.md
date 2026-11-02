@@ -2,6 +2,7 @@
 
 Read README.md, docs/CONTEXT.md, docs/ARCHITECTURE.md, and docs/PLAN.md before changing the backend. Consult docs/openapi.yaml before changing HTTP behavior.
 
+- Do not launch or run the iOS Simulator or simulator tests; the user handles simulator verification unless they explicitly change this preference.
 - The user writes all iOS code. Do not create or modify Swift, Xcode projects, or iOS tests without an explicit request. Do not change ios/ as part of backend work.
 - Teach decisions, trade-offs, and failure modes. Explain each small vertical slice before implementing it and report verification afterward.
 - Inspect existing work and preserve it. Do not implement the entire backend in one pass.

@@ -25,10 +25,10 @@ struct DefaultSignoutUseCase: SignoutUseCase {
     }
 
     func execute() async throws {
-        guard let credentials = await sessionProvider.credentials() else {
+        guard await sessionProvider.credentials() != nil else {
             throw SessionError.noSession
         }
-        try await authRepository.signOut(refreshToken: credentials.accessToken)
+        try await authRepository.signOut()
         try await sessionWriter.clearSession()
     }
 }

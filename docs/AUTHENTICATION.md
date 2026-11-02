@@ -84,3 +84,7 @@ Keep refresh tokens in Keychain and access tokens in memory initially. Replace t
 HTTPS setup, Docker, password reset, email verification, user administration, session-management UI, logout-all, device binding, MFA, and expired-session/token cleanup are deferred. Consumed token records currently accumulate. In-memory IP throttling is suitable only for this single-instance learning slice. Inspection creation/list/details and workflow mutations now exist; the sync engine and offline-access policy remain pending.
 
 Libraries: [node-argon2](https://github.com/ranisalt/node-argon2), [jose](https://github.com/panva/jose), [Fastify rate limiter](https://github.com/fastify/fastify-rate-limit).
+
+## iOS logout request implementation
+
+RemoteAuthRepository.signOut() uses APIClient.postWithoutResponse(path: "auth/logout", requiresAuthentication: true). The API client obtains the current access token from AccessTokenProvider and sets the bearer header; logout has no refreshToken body. Empty 204 responses succeed without JSON decoding. Local session cleanup follows server success, and only then does the Account screen invoke onSignedOut. A 401 leaves the local session intact and reports failure; this implementation does not automatically refresh expired access tokens before logout. The client transport is injectable for request-contract tests without calling the live backend.

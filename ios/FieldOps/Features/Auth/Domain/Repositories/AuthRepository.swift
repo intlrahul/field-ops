@@ -15,7 +15,5 @@ protocol AuthRepository: Sendable {
         refreshToken: String
     ) async throws -> Session
 
-    func signOut(
-        refreshToken: String
-    ) async throws
+    func signOut() async throws
 }

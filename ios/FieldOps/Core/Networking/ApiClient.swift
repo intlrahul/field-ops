@@ -20,21 +20,23 @@ protocol APIClient: Sendable {
         requiresAuthentication: Bool
     ) async throws -> Response
     
-    func postWithoutResponse<Body: Encodable & Sendable>(
+    func postWithoutResponse(
         path: String,
-        body: Body,
         requiresAuthentication: Bool
     ) async throws 
 }
 
 struct AlamofireAPIClient: APIClient {
+    private let session: Alamofire.Session
     private let baseURL: URL
     private let accessTokenProvider: any AccessTokenProvider
 
     init(
         baseURL: URL,
-        accessTokenProvider: any AccessTokenProvider
+        accessTokenProvider: any AccessTokenProvider,
+        session: Alamofire.Session = .default
     ) {
+        self.session = session
         self.baseURL = baseURL
         self.accessTokenProvider = accessTokenProvider
     }
@@ -42,9 +44,11 @@ struct AlamofireAPIClient: APIClient {
     func get<Response>(path: String, requiresAuthentication: Bool) async throws
         -> Response where Response: Decodable, Response: Sendable
     {
-        try await AF.request(
+        let headers = try await headers(requiresAuthentication: requiresAuthentication)
+        return try await session.request(
             baseURL.appendingPathComponent(path),
-            method: .get
+            method: .get,
+            headers: headers
         )
         .validate(statusCode: 200..<300)
         .serializingDecodable(Response.self)
@@ -59,11 +63,13 @@ struct AlamofireAPIClient: APIClient {
     where
         Body: Encodable, Body: Sendable, Response: Decodable, Response: Sendable
     {
-        let response = await AF.request(
+        let headers = try await headers(requiresAuthentication: requiresAuthentication)
+        let response = await session.request(
             baseURL.appendingPathComponent(path),
             method: .post,
             parameters: body,
-            encoder: JSONParameterEncoder.default
+            encoder: JSONParameterEncoder.default,
+            headers: headers
         )
         .validate(statusCode: 200..<300)
         .serializingDecodable(Response.self)
@@ -99,17 +105,15 @@ struct AlamofireAPIClient: APIClient {
         }
     }
     
-    func postWithoutResponse<Body: Encodable & Sendable>(
+    func postWithoutResponse(
         path: String,
-        body: Body,
         requiresAuthentication: Bool
     ) async throws {
-        let response = await AF.request(
+        let headers = try await headers(requiresAuthentication: requiresAuthentication)
+        let response = await session.request(
             baseURL.appendingPathComponent(path),
             method: .post,
-            parameters: body,
-            encoder: JSONParameterEncoder.default
-            // Include your existing prepared headers here.
+            headers: headers
         )
         .validate(statusCode: 200..<300)
         .serializingData()
@@ -134,4 +138,13 @@ struct AlamofireAPIClient: APIClient {
             throw error
         }
     }
+
+    private func headers(requiresAuthentication: Bool) async throws -> HTTPHeaders {
+        guard requiresAuthentication else { return [:] }
+        guard let token = await accessTokenProvider.accessToken(), !token.isEmpty else {
+            throw SessionError.noSession
+        }
+        return [.authorization(bearerToken: token)]
+    }
+
 }
