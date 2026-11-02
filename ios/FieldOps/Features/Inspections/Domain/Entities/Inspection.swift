@@ -7,9 +7,9 @@
 
 import Foundation
 
-nonisolated enum InspectionStatus: String, CaseIterable, Sendable {
+nonisolated enum InspectionStatus: String, CaseIterable, Decodable, Sendable {
     case assigned
-    case inProgress
+    case inProgress = "in_progress"
     case completed
 
     var title: String {
@@ -26,7 +26,7 @@ nonisolated struct Inspection: Identifiable, Equatable, Sendable {
     let title: String
     let assetName: String
     let status: InspectionStatus
-    let dueDate: Date
+    let dueDate: Date?
 }
 
 extension Inspection {

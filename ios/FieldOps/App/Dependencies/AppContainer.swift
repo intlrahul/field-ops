@@ -10,6 +10,7 @@ import Foundation
 @MainActor
 final class AppContainer {
     let apiClient: any APIClient
+    let inspectionRepository: any InspectionRepository
     let authFactory: AuthFactory
     let sessionStore: any SessionProvider & SessionWriter
 
@@ -30,6 +31,10 @@ final class AppContainer {
         apiClient = AlamofireAPIClient(
             baseURL: baseURL,
             accessTokenProvider: sessionStore
+        )
+
+        inspectionRepository = RemoteInspectionRepository(
+            apiClient: apiClient
         )
 
         authFactory = AuthFactory(

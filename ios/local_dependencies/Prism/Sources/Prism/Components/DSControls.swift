@@ -67,7 +67,7 @@ public struct DSButton: View {
         Button(role: variant == .destructive ? .destructive : nil, action: action) {
             HStack(spacing: DSSpacing.xs) {
                 if isLoading {
-                    ProgressView().tint(theme.colors.secondaryText).accessibilityHidden(true)
+                    DSLoadingIndicator(size: .compact)
                 } else if let symbol {
                     Image(systemName: symbol).accessibilityHidden(true)
                 }

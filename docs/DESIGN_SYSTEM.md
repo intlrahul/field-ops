@@ -65,7 +65,7 @@ Keep private decorative/layout decisions inside the design system. Content strin
 
 ## Applied screens
 
-Login, Account, Dashboard, inspection details, and app loading now use the shared components. Repeated field/card/button styling has been removed from feature files. DashboardSummaryView now counts the actual existing sample inspections rather than showing unrelated hardcoded totals. Samples remain local; no API integration or business workflow was added. The original checklist scan illustration is retained as Prism’s DSLoadingIndicator, used by DSLoadingState. It uses theme colors, pauses when the scene is inactive, and becomes a static checklist under Reduce Motion. Button-level loading retains the native progress indicator.
+Login, Account, Dashboard, inspection details, and app loading now use the shared components. Repeated field/card/button styling has been removed from feature files. DashboardSummaryView now counts the actual existing sample inspections rather than showing unrelated hardcoded totals. Samples remain local; no API integration or business workflow was added. The original checklist scan illustration is retained as Prism’s DSLoadingIndicator, used by DSLoadingState. It uses theme colors, pauses when the scene is inactive, and becomes a static checklist under Reduce Motion. Button loading now uses the compact checklist scanner.
 
 ## Verification and limits
 
@@ -93,7 +93,7 @@ The user can open PrismCatalog's Light, Dark, and Accessibility previews and ver
 - Small and largest accessibility text sizes, long labels, and portrait/landscape on a small phone.
 - Appearance changes and Increase Contrast using Xcode/device settings (contrast/reduced-motion environment values are read-only, not manually assigned in previews).
 - VoiceOver labels/order, secure input, focus handoff, keyboard dismissal, disabled/loading actions, and status messages.
-- Reduce Motion: custom button feedback animation is disabled; the checklist loading scan becomes static and native button progress retains platform behavior.
+- Reduce Motion: custom button feedback animation is disabled; the checklist loading scan becomes static and button checklist loading also becomes static.
 - Login keyboard reachability, scrollability, navigation back/deep-link behavior, Account confirmation and sign-out callbacks.
 
 Large-text grids collapse to one column at accessibility sizes. Decorative symbols are hidden from VoiceOver; actionable icons carry explicit labels. Actual behavior/layout still requires the manual checks above. New controls (sheets, toggles, selectors, complex tables), a persistent theme picker, custom fonts, and additional brand themes should be added when a product screen needs them.
@@ -109,3 +109,16 @@ DSLoadingState also accepts a heading view builder for branded loading, while it
 DSWelcomeIllustration(symbol:) supplies decorative vector artwork using semantic colors and a caller-selected symbol. It maintains its aspect ratio while growing with available width and is hidden from VoiceOver. Login uses the readable screen width (up to 680 points) for the illustration, while keeping its form at 440 points. The scroll view preserves access on small phones, landscape, Split View, and with the keyboard visible. Artwork dimensions describe a scalable drawing, not text sizing. Review phone and iPad layouts manually; no simulator execution or screenshot QA is claimed.
 
 Button height includes content padding: apply padding before the minimum-height frame in DSActionStyle. Ordinary single-line buttons are 52 points tall rather than 68; larger text and wrapped labels can expand naturally.
+
+## Content loading placeholders
+
+DSSkeleton(.card) and DSSkeleton(.statistics) provide shared noninteractive shimmer placeholders. They use semantic surfaces, scale line heights with Dynamic Type, and expose a caller-supplied loading label to VoiceOver rather than placeholder children. Reduce Motion or Reduce Transparency disables shimmer; animation pauses when the scene is inactive. The catalog includes both layouts. Inspection list/statistics render independently as their requests resolve, and details use card placeholders until their single detail response arrives. Keep existing content visible during refresh; do not replace it with a full-screen loader. Session restoration retains its existing app-boundary loading screen.
+
+DSStatGrid optionally accepts selectedID and onSelect. With an action it renders native buttons, an accent selection outline, and the selected accessibility trait; without one it remains read-only. Features map the string IDs to domain filters. PrismCatalog demonstrates selection.
+
+
+## Sized loading and refresh
+
+DSLoadingIndicator(size:) supports .launch (144 points, default), .refresh (48), and .compact (28). Compact artwork simplifies the checklist so it remains legible. DSLoadingRow supplies refresh-size artwork with scalable loading text and a combined accessibility label. All sizes respect Reduce Motion and scene activity. These fixed decorative sizes do not change with Dynamic Type; labels still scale.
+
+DSScreen(onRefresh:) uses native SwiftUI .refreshable for reliable pull recognition and release behavior. The system owns its pull indicator; a 48-point checklist row appears in content while refreshing. Concurrent refresh actions are ignored until the async action finishes. Native refresh awaits the full async action, and a named accessibility Refresh action provides an alternative through a view-owned task. Dashboard/details use this API and retain existing content; initial skeletons remain. DSButton uses the compact scanner. Manual device verification is required for pull/release, scrolling, short/empty lists, VoiceOver, and dark/light appearance; only generic-device compilation was performed.

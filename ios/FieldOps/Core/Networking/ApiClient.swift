@@ -45,14 +45,25 @@ struct AlamofireAPIClient: APIClient {
         -> Response where Response: Decodable, Response: Sendable
     {
         let headers = try await headers(requiresAuthentication: requiresAuthentication)
-        return try await session.request(
-            baseURL.appendingPathComponent(path),
-            method: .get,
-            headers: headers
-        )
-        .validate(statusCode: 200..<300)
-        .serializingDecodable(Response.self)
-        .value
+        guard let relative = URLComponents(string: path),
+              var url = URLComponents(url: baseURL.appendingPathComponent(relative.path), resolvingAgainstBaseURL: false) else {
+            throw URLError(.badURL)
+        }
+        url.queryItems = relative.queryItems
+        guard let requestURL = url.url else { throw URLError(.badURL) }
+        let response = await session.request(requestURL, method: .get, headers: headers)
+            .validate(statusCode: 200..<300)
+            .serializingDecodable(Response.self)
+            .response
+        switch response.result {
+        case .success(let value): return value
+        case .failure(let error):
+            if let data = response.data,
+               let payload = try? JSONDecoder().decode(APIErrorResponse.self, from: data) {
+                throw BackendError(code: payload.error.code, message: payload.error.message)
+            }
+            throw error
+        }
     }
 
     func post<Body, Response>(

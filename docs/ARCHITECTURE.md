@@ -20,3 +20,11 @@ The official route-registration procedure is docs/IOS_NAVIGATION.md (relative to
 ## iOS design system
 
 ios/local_dependencies/Prism/Sources/Prism owns semantic assets/tokens, Dynamic Type typography, theme environment, reusable components, and a preview catalog. Current app screens consume it; feature/domain/navigation responsibilities stay outside it. FieldOpsApp applies the system-following default theme once. Native navigation/dialog surfaces retain platform behavior. See DESIGN_SYSTEM.md and ADR 0006 for required authoring conventions and verification limits. The user handles simulator/visual testing.
+
+## iOS inspection reads
+
+Inspections owns summary/detail domain types and an InspectionRepository boundary shared with Dashboard. RemoteInspectionRepository maps transport DTOs through the authenticated APIClient. AppContainer supplies one repository; feature routes construct State-owned view models with explicit injection. Sample repositories are preview/test-only. The dashboard uses cursor pagination and labels counts as loaded-only; details fetch independently by backend ID. See IOS_INSPECTIONS.md for behavior, test compilation, and manual checks. Workflow writes and offline persistence remain separate work.
+
+Inspection statistics use one scoped aggregate query in inspectionStore, exposed through service and authenticated GET /inspections/statistics. Scope reuses the list/detail authorization predicate; totals do not depend on pagination. Empty results return four integer zeroes. No filters or cached counters are added. Separate list/statistics requests are individually consistent, not a shared snapshot.
+
+Inspection presentation now depends on explicit Domain/UseCases protocols (list, details, statistics), not directly on InspectionRepository. Default use cases delegate domain reads to the repository. AppRoutes composes them and passes them to feature route builders. Loading/filter/pagination presentation state remains in view models.

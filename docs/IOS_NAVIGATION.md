@@ -74,3 +74,11 @@ Backend behavior and the deferred offline-sync milestone are unchanged.
 Verified on 2026-11-02: simulator app build succeeded; 8 package tests and 4 navigation integration tests passed on iPhone 17 / iOS 26.5. The built Info.plist contains the fieldops URL scheme. Tests use stub restoration and do not prove real-screen gestures or backend login, which remain the manual checks above.
 
 AppCoordinator is deliberately not injected into the SwiftUI environment. AppRootView receives it explicitly; feature views use narrow callbacks (such as onSignedOut) for app-flow transitions. Router remains in the environment for navigation. AccountViewModel/use cases continue to own sign-out work; the callback runs after success.
+
+## Current inspection destinations (supersedes the sample example)
+
+Inspection details now fetch GET /inspections/{id} through an injected InspectionRepository. AppRoutes supplies the production repository to both DashboardRoutes and InspectionRoutes; previews/tests pass PreviewInspectionRepository explicitly. The route pattern, explicit parent, and auth handoff remain unchanged. Use fieldops://inspections/REAL_BACKEND_UUID; inspection-001 is now preview-only and does not resolve production data. See IOS_INSPECTIONS.md. Existing navigation tests were adjusted for explicit repository dependencies and compiled, not executed, during this slice.
+
+## Statistics list destinations
+
+Statistics cards push /inspection-lists/:status through InspectionRoutes.listPath(status:). Accepted segments are all, assigned, in_progress, completed; parent is Dashboard (/). InspectionRoutes constructs InspectionListScreen and its view model from injected use cases. AppRoutes supplies the new route dependencies; FieldOpsApp/AppComposition/AppNavigation remain unchanged. Internal pushes form Dashboard → filtered list → details and preserve the list on Back. Direct detail links retain their original Dashboard parent. Example: fieldops://inspection-lists/completed.

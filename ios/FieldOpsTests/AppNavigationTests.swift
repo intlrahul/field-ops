@@ -1,7 +1,8 @@
-import SwiftUI
-import Testing
 import PathRouter
 import PathRouterUI
+import SwiftUI
+import Testing
+
 @testable import FieldOps
 
 private nonisolated struct FixedRestoration: RestoreSessionUseCase {
@@ -10,7 +11,8 @@ private nonisolated struct FixedRestoration: RestoreSessionUseCase {
 }
 
 private actor DelayedRestoration: RestoreSessionUseCase {
-    private var continuation: CheckedContinuation<SessionRestorationResult, Never>?
+    private var continuation:
+        CheckedContinuation<SessionRestorationResult, Never>?
 
     func execute() async throws -> SessionRestorationResult {
         await withCheckedContinuation { continuation = $0 }
@@ -28,16 +30,25 @@ private actor DelayedRestoration: RestoreSessionUseCase {
 
 @MainActor
 struct AppNavigationTests {
-    private func coordinator(restoration: any RestoreSessionUseCase) throws -> AppCoordinator {
+    private func coordinator(restoration: any RestoreSessionUseCase) throws
+        -> AppCoordinator
+    {
         let screens = try ScreenRegistry(screens: [
             ScreenRoute(DashboardRoutes.path) { _ in Text("Dashboard") },
-            ScreenRoute(AccountRoutes.path, parent: DashboardRoutes.path) { _ in Text("Account") }
+            ScreenRoute(AccountRoutes.path, parent: DashboardRoutes.path) { _ in
+                Text("Account")
+            },
         ])
-        return AppCoordinator(restoreSessionUseCase: restoration, router: screens.makeRouter())
+        return AppCoordinator(
+            restoreSessionUseCase: restoration,
+            router: screens.makeRouter()
+        )
     }
 
     @Test func restorationResumesPendingDeepLink() async throws {
-        let coordinator = try coordinator(restoration: FixedRestoration(result: .authenticated))
+        let coordinator = try coordinator(
+            restoration: FixedRestoration(result: .authenticated)
+        )
         coordinator.handleURL(try #require(URL(string: "fieldops://account")))
         #expect(coordinator.router.path.isEmpty)
         await coordinator.start()
@@ -48,7 +59,9 @@ struct AppNavigationTests {
     }
 
     @Test func loginPreservesPendingLinkButLogoutDiscardsIt() async throws {
-        let coordinator = try coordinator(restoration: FixedRestoration(result: .signedOut))
+        let coordinator = try coordinator(
+            restoration: FixedRestoration(result: .signedOut)
+        )
         coordinator.handleURL(try #require(URL(string: "fieldops://account")))
         await coordinator.start()
         #expect(coordinator.flow == .signedOut)
@@ -62,7 +75,9 @@ struct AppNavigationTests {
     }
 
     @Test func unknownLinksPreserveHistoryAndBackReturnsToRoot() throws {
-        let coordinator = try coordinator(restoration: FixedRestoration(result: .signedOut))
+        let coordinator = try coordinator(
+            restoration: FixedRestoration(result: .signedOut)
+        )
         coordinator.didSignIn()
         try coordinator.router.navigate(to: AccountRoutes.path, mode: .push)
         coordinator.handleURL(try #require(URL(string: "fieldops://unknown")))
@@ -84,34 +99,85 @@ struct AppNavigationTests {
         #expect(coordinator.router.path.isEmpty)
     }
 
-    @Test func inspectionDeepLinkResumesAboveDashboardAfterLogin() async throws {
-        let registrations = DashboardRoutes.registrations() + InspectionRoutes.registrations()
-        let registry = try RouteRegistry(routes: registrations.map(\.definition))
+    @Test func inspectionDeepLinkResumesAboveDashboardAfterLogin() async throws
+    {
+        let registrations =
+            DashboardRoutes.registrations(getInspections: DefaultGetInspectionsUseCase(repository: PreviewInspectionRepository()), getStatistics: DefaultGetInspectionStatisticsUseCase(repository: PreviewInspectionRepository()))
+            + InspectionRoutes.registrations(getDetails: DefaultGetInspectionDetailsUseCase(repository: PreviewInspectionRepository()), getInspections: DefaultGetInspectionsUseCase(repository: PreviewInspectionRepository()), getStatistics: DefaultGetInspectionStatisticsUseCase(repository: PreviewInspectionRepository()))
+        let registry = try RouteRegistry(
+            routes: registrations.map(\.definition)
+        )
         let router = Router(registry: registry)
         let coordinator = AppCoordinator(
-            restoreSessionUseCase: FixedRestoration(result: .signedOut), router: router
+            restoreSessionUseCase: FixedRestoration(result: .signedOut),
+            router: router
         )
         let inspection = try #require(Inspection.samples.first)
         let path = InspectionRoutes.detailsPath(id: inspection.id)
-        coordinator.handleURL(try #require(URL(string: "fieldops://" + path.dropFirst())))
+        coordinator.handleURL(
+            try #require(URL(string: "fieldops://" + path.dropFirst()))
+        )
         await coordinator.start()
         #expect(coordinator.flow == .signedOut)
         coordinator.didSignIn()
         #expect(router.path.map(\.path) == [path])
         #expect(router.path.first?.parameters["id"] == inspection.id)
-        #expect(try registry.resolve(path).entries.map(\.path) == [DashboardRoutes.path, path])
+        #expect(
+            try registry.resolve(path).entries.map(\.path) == [
+                DashboardRoutes.path, path,
+            ]
+        )
         router.back()
         #expect(router.path.isEmpty)
     }
 
-    @Test func inspectionPathsEncodeSegmentsAndRejectMalformedParameters() throws {
-        let registrations = DashboardRoutes.registrations() + InspectionRoutes.registrations()
+    @Test func statisticsListRoutesValidateStatusAndPreserveBackStack() throws {
+        let repository = PreviewInspectionRepository()
+        let registrations = DashboardRoutes.registrations(
+            getInspections: DefaultGetInspectionsUseCase(repository: repository),
+            getStatistics: DefaultGetInspectionStatisticsUseCase(repository: repository)
+        ) + InspectionRoutes.registrations(
+            getDetails: DefaultGetInspectionDetailsUseCase(repository: repository),
+            getInspections: DefaultGetInspectionsUseCase(repository: repository),
+            getStatistics: DefaultGetInspectionStatisticsUseCase(repository: repository)
+        )
         let registry = try RouteRegistry(routes: registrations.map(\.definition))
+        let router = Router(registry: registry, authentication: .signedIn)
+        let list = InspectionRoutes.listPath(status: .inProgress)
+        #expect(try registry.resolve(list).entries.map(\.path) == ["/", list])
+        #expect(try registry.resolve(InspectionRoutes.listPath(status: nil)).entries.last?.parameters["status"] == "all")
+        #expect(throws: RoutingError.self) { try registry.resolve("/inspection-lists/unknown") }
+        try router.navigate(to: list, mode: .push)
+        let details = InspectionRoutes.detailsPath(id: "inspection-001")
+        try router.navigate(to: details, mode: .push)
+        #expect(router.path.map(\.path) == [list, details])
+        router.back()
+        #expect(router.path.map(\.path) == [list])
+        router.back()
+        #expect(router.path.isEmpty)
+    }
+
+    @Test func inspectionPathsEncodeSegmentsAndRejectMalformedParameters()
+        throws
+    {
+        let registrations =
+            DashboardRoutes.registrations(getInspections: DefaultGetInspectionsUseCase(repository: PreviewInspectionRepository()), getStatistics: DefaultGetInspectionStatisticsUseCase(repository: PreviewInspectionRepository()))
+            + InspectionRoutes.registrations(getDetails: DefaultGetInspectionDetailsUseCase(repository: PreviewInspectionRepository()), getInspections: DefaultGetInspectionsUseCase(repository: PreviewInspectionRepository()), getStatistics: DefaultGetInspectionStatisticsUseCase(repository: PreviewInspectionRepository()))
+        let registry = try RouteRegistry(
+            routes: registrations.map(\.definition)
+        )
         let path = InspectionRoutes.detailsPath(id: "sample with space")
         #expect(path == "/inspections/sample%20with%20space")
-        #expect(try registry.resolve(path).entries.last?.parameters["id"] == "sample with space")
-        #expect(throws: RoutingError.self) { try registry.resolve("/inspections/%20") }
-        #expect(throws: RoutingError.self) { try registry.resolve("/inspections/bad%2Fid") }
+        #expect(
+            try registry.resolve(path).entries.last?.parameters["id"]
+                == "sample with space"
+        )
+        #expect(throws: RoutingError.self) {
+            try registry.resolve("/inspections/%20")
+        }
+        #expect(throws: RoutingError.self) {
+            try registry.resolve("/inspections/bad%2Fid")
+        }
     }
 
 }

@@ -4,6 +4,7 @@ import SwiftUI
 public struct PrismCatalog: View {
     @Environment(\.designTheme) private var theme
     @State private var appearance: DSAppearance
+    @State private var selectedStatistic: String? = "assigned"
     @State private var email = ""
     @State private var password = ""
 
@@ -12,6 +13,18 @@ public struct PrismCatalog: View {
     public var body: some View {
         DSScreen {
             DSText("Prism design system", style: .title)
+            DSSection("Checklist loading sizes") {
+                HStack(spacing: DSSpacing.lg) {
+                    DSLoadingIndicator(size: .compact)
+                    DSLoadingIndicator(size: .refresh)
+                    DSLoadingIndicator(size: .launch)
+                }
+                DSLoadingRow("Refreshing…")
+            }
+            DSSection("Loading placeholders") {
+                DSSkeleton(.statistics, label: "Loading statistics")
+                DSSkeleton()
+            }
             DSSection("Responsive welcome artwork") {
                 DSWelcomeIllustration(symbol: "checkmark.shield.fill")
             }
@@ -72,7 +85,7 @@ public struct PrismCatalog: View {
                 DSStatGrid(items: [
                     DSStatistic(id: "assigned", title: "Assigned", value: "12", symbol: "clipboard"),
                     DSStatistic(id: "completed", title: "Completed", value: "8", symbol: "checkmark.circle")
-                ])
+                ], selectedID: selectedStatistic) { selectedStatistic = $0 }
             }
             DSSection("Content") {
                 DSCard {

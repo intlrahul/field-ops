@@ -187,17 +187,41 @@ public struct DSStatistic: Identifiable {
 }
 
 public struct DSStatGrid: View {
+    @Environment(\.designTheme) private var theme
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     let items: [DSStatistic]
 
-    public init(items: [DSStatistic]) { self.items = items }
+    private let selectedID: String?
+    private let onSelect: ((String) -> Void)?
+
+    public init(items: [DSStatistic], selectedID: String? = nil, onSelect: ((String) -> Void)? = nil) {
+        self.items = items
+        self.selectedID = selectedID
+        self.onSelect = onSelect
+    }
 
     public var body: some View {
         LazyVGrid(columns: dynamicTypeSize.isAccessibilitySize
                   ? [GridItem(.flexible())]
                   : [GridItem(.adaptive(minimum: DSMetrics.summaryColumnWidth))], spacing: DSSpacing.sm) {
             ForEach(items) { item in
-                DSStatCard(title: item.title, value: item.value, symbol: item.symbol)
+                if let onSelect {
+                    Button { onSelect(item.id) } label: {
+                        DSStatCard(title: item.title, value: item.value, symbol: item.symbol)
+                            .overlay {
+                                if selectedID == item.id {
+                                    RoundedRectangle(cornerRadius: DSRadius.card)
+                                        .strokeBorder(theme.colors.accent, lineWidth: 2)
+                                }
+                            }
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel("\(item.title): \(item.value)")
+                    .accessibilityHint("Show matching items")
+                    .accessibilityAddTraits(selectedID == item.id ? .isSelected : [])
+                } else {
+                    DSStatCard(title: item.title, value: item.value, symbol: item.symbol)
+                }
             }
         }
     }

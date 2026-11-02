@@ -4,21 +4,61 @@ public struct DSScreen<Content: View>: View {
     @Environment(\.designTheme) private var theme
     private let maxWidth: CGFloat
     private let content: Content
+    private let onRefresh: (() async -> Void)?
+    @State private var isRefreshing = false
+    @State private var refreshGeneration = 0
 
-    public init(maxWidth: CGFloat = DSMetrics.readableWidth, @ViewBuilder content: () -> Content) {
+    public init(maxWidth: CGFloat = DSMetrics.readableWidth, onRefresh: (() async -> Void)? = nil,
+                @ViewBuilder content: () -> Content) {
         self.maxWidth = maxWidth
+        self.onRefresh = onRefresh
         self.content = content()
     }
 
     public var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: DSSpacing.lg) { content }
-                .frame(maxWidth: maxWidth, alignment: .leading)
-                .padding(DSSpacing.lg)
-                .frame(maxWidth: .infinity)
+        Group {
+            if onRefresh != nil {
+                scrollContent.refreshable { await performRefresh() }
+            } else {
+                scrollContent
+            }
         }
+        .accessibilityActions {
+            if onRefresh != nil {
+                Button("Refresh") {
+                    guard !isRefreshing else { return }
+                    refreshGeneration += 1
+                }
+            }
+        }
+        .task(id: refreshGeneration) {
+            guard refreshGeneration > 0 else { return }
+            await performRefresh()
+        }
+    }
+
+    private var scrollContent: some View {
+        ScrollView {
+            VStack(spacing: 0) {
+                if isRefreshing {
+                    DSLoadingRow("Refreshing…").padding(.top, DSSpacing.sm)
+                }
+                VStack(alignment: .leading, spacing: DSSpacing.lg) { content }
+                    .frame(maxWidth: maxWidth, alignment: .leading)
+                    .padding(DSSpacing.lg)
+                    .frame(maxWidth: .infinity)
+            }
+        }
+        .scrollBounceBehavior(.always)
         .scrollDismissesKeyboard(.interactively)
         .background(theme.colors.canvas.ignoresSafeArea())
+    }
+
+    private func performRefresh() async {
+        guard let onRefresh, !isRefreshing else { return }
+        isRefreshing = true
+        defer { isRefreshing = false }
+        await onRefresh()
     }
 }
 
