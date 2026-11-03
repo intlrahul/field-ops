@@ -16,3 +16,6 @@ Authentication acceptance verified: 15 tests pass across foundation, authenticat
 Assets/inspections acceptance verified: npm run check passes with 27 tests, including access boundaries, atomic nested creation/rollback, immutable snapshots, stable pagination, cursor scope/forgery checks, strict validation, migration preservation, and repeatable demo seeding.
 
 Workflow acceptance verified: npm run check passes with 56 tests, strict type checking, linting, and production build. See INSPECTION_WORKFLOW.md for API behavior, manual testing, and concurrency/retry limits. The online workflow is complete for the agreed initial scope. Synchronization contract design is deferred at the user’s request; resume only when requested.
+
+
+Capability authorization (implemented): organization migration/preservation, static backend role groups, separate data scope, consistent auth capability responses, assigned supervisor performance, and shared inspection action policy. Templates/manage UI/multi-organization membership remain deferred. See AUTHORIZATION.md. Verification: 70 isolated SQLite/API tests plus typecheck, lint, build and OpenAPI validation. No iOS authorization implementation included.

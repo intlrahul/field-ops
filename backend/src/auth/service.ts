@@ -1,3 +1,4 @@
+import { capabilities } from '../authorization/policy.js';
 import { createHash, randomBytes, randomUUID } from 'node:crypto';
 import { SignJWT, jwtVerify } from 'jose';
 import type { SqliteDatabase } from '../db/database.js';
@@ -19,7 +20,7 @@ export function authService(db: SqliteDatabase, options: AuthOptions) {
   const store = authStore(db);
   const dummy = hashPassword(randomBytes(32).toString('hex'));
   const digest = (token: string) => createHash('sha256').update(token).digest('hex');
-  const publicUser = (user: User) => ({ id: user.id, email: user.email, role: user.role });
+  const publicUser = (user: User) => ({ id: user.id, email: user.email, role: user.role, roles: [user.role], organizationId: user.organization_id, capabilities: capabilities(user.role) });
   async function tokens(user: User, sessionId: string, refreshToken: string, expiry: number) {
     const issued = now();
     const accessExpiry = Math.min(issued + accessSeconds, expiry);

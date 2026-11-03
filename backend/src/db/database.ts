@@ -1,3 +1,4 @@
+import { authorizationSchema } from '../authorization/schema.js';
 import Database from 'better-sqlite3';
 import { workflowSchema } from '../inspections/workflow-schema.js';
 import { inspectionSchema } from '../inspections/schema.js';
@@ -25,6 +26,7 @@ const migrations: readonly { version: number; sql: string }[] = [
   { version: 1, sql: authSchema },
   { version: 2, sql: inspectionSchema },
   { version: 3, sql: workflowSchema },
+  { version: 4, sql: authorizationSchema },
 ];
 
 export function migrate(db: SqliteDatabase): void {

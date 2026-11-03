@@ -106,7 +106,8 @@ export const httpSchemas: Record<string, object> = {
       "location",
       "createdAt",
       "updatedAt",
-      "version"
+      "version",
+      "organizationId"
     ],
     "properties": {
       "id": {
@@ -143,6 +144,11 @@ export const httpSchemas: Record<string, object> = {
       "version": {
         "type": "integer",
         "minimum": 1
+      },
+      "organizationId": {
+        "type": "string",
+        "format": "uuid",
+        "description": "Server-owned organization identifier."
       }
     }
   },
@@ -264,7 +270,8 @@ export const httpSchemas: Record<string, object> = {
       "dueAt",
       "createdAt",
       "updatedAt",
-      "version"
+      "version",
+      "organizationId"
     ],
     "properties": {
       "id": {
@@ -308,6 +315,11 @@ export const httpSchemas: Record<string, object> = {
       "version": {
         "type": "integer",
         "minimum": 1
+      },
+      "organizationId": {
+        "type": "string",
+        "format": "uuid",
+        "description": "Server-owned organization identifier."
       }
     }
   },
@@ -467,7 +479,10 @@ export const httpSchemas: Record<string, object> = {
       "readings",
       "notes",
       "startedAt",
-      "completedAt"
+      "completedAt",
+      "organizationId",
+      "allowedActions",
+      "completionBlockers"
     ],
     "properties": {
       "id": {
@@ -539,6 +554,39 @@ export const httpSchemas: Record<string, object> = {
         "type": "string",
         "format": "date-time",
         "nullable": true
+      },
+      "organizationId": {
+        "type": "string",
+        "format": "uuid",
+        "description": "Server-owned organization identifier."
+      },
+      "allowedActions": {
+        "type": "array",
+        "uniqueItems": true,
+        "items": {
+          "type": "string"
+        },
+        "description": "Actor-specific available actions: start, edit_answers, edit_readings, add_note, complete. Missing or unknown entries grant nothing; reauthorized on every request."
+      },
+      "completionBlockers": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "code",
+            "itemId"
+          ],
+          "properties": {
+            "code": {
+              "type": "string"
+            },
+            "itemId": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        }
       }
     }
   },

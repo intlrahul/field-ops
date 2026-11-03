@@ -1,4 +1,5 @@
 import { workflowService } from './inspections/workflow-service.js';
+import { defaultOrganizationId } from './authorization/schema.js';
 import { inspectionStore } from './inspections/store.js';
 import { randomUUID } from 'node:crypto';
 import { openDatabase, migrate } from './db/database.js';
@@ -16,15 +17,17 @@ try {
   migrate(db);
   db.transaction(() => {
     for (const [index,role] of (['supervisor','technician'] as const).entries()) {
-      db.prepare('INSERT INTO users (id,email,password_hash,role) VALUES (?,?,?,?) ON CONFLICT(email) DO NOTHING')
-        .run(randomUUID(),`${role}@fieldops.test`,hashes[index]!,role);
+      db.prepare('INSERT INTO users (id,email,password_hash,role,organization_id) VALUES (?,?,?,?,?) ON CONFLICT(email) DO NOTHING')
+        .run(randomUUID(),`${role}@fieldops.test`,hashes[index]!,role,defaultOrganizationId);
     }
     const store = inspectionStore(db);
     const workflow = workflowService(db);
-    const actor = { id: '',role: 'supervisor' as const };
+    const supervisorUser = db.prepare("SELECT id,role,organization_id AS organizationId FROM users WHERE email = 'supervisor@fieldops.test' AND role = 'supervisor' AND active = 1").get() as import('./inspections/types.js').Actor | undefined;
+    if (!supervisorUser || supervisorUser.organizationId !== defaultOrganizationId) throw new Error('Seed supervisor must be active in the default organization');
+    const actor = supervisorUser;
     const timestamp = new Date().toISOString();
-    const assigned = db.prepare("SELECT id FROM users WHERE email = 'technician@fieldops.test' AND role = 'technician' AND active = 1")
-      .get() as { id: string } | undefined;
+    const assigned = db.prepare("SELECT id FROM users WHERE email = 'technician@fieldops.test' AND role = 'technician' AND active = 1 AND organization_id = ?")
+      .get(defaultOrganizationId) as { id: string } | undefined;
     const examples = [
       { tag: 'DEMO-PUMP-001',name: 'Demo cooling pump',location: 'Plant A',title: 'Demo pump safety inspection',
         days: null,checks: ['Inspect housing for cracks','Check pipe connections'],reading: 'Temperature',unit: '°C',min: 0,max: 80 },
@@ -47,7 +50,7 @@ try {
     for (const example of demoInspections) {
       const existingAsset = db.prepare('SELECT id FROM assets WHERE asset_tag = ?').get(example.tag) as { id: string } | undefined;
       const asset = existingAsset ? store.getAsset(existingAsset.id,actor)!
-        : store.createAsset({ assetTag: example.tag,name: example.name,location: example.location },timestamp);
+        : store.createAsset({ assetTag: example.tag,name: example.name,location: example.location },timestamp,actor);
       const existingInspection = db.prepare('SELECT id FROM inspections WHERE asset_id = ? LIMIT 1').get(asset.id) as { id: string } | undefined;
       if (assigned && !existingInspection) {
         store.createInspection({ assetId: asset.id,assigneeId: assigned.id,title: example.title,
@@ -55,12 +58,12 @@ try {
           checklistItems: example.checks.map(label => ({ label,required: true })),
           readingDefinitions: example.reading === null ? [] : [{ label: example.reading,unit: example.unit,
             required: true,minValue: example.min,maxValue: example.max }],
-        },timestamp);
+        },timestamp,actor);
       }
       const unit = Number(example.tag.slice(-3));
       if (assigned && unit >= 5) {
         const inspectionId = existingInspection?.id ?? (db.prepare('SELECT id FROM inspections WHERE asset_id = ?').get(asset.id) as { id: string }).id;
-        const technicianActor = { id: assigned.id,role: 'technician' as const };
+        const technicianActor = { id: assigned.id,role: 'technician' as const,organizationId: defaultOrganizationId };
         const inspection = store.getInspection(inspectionId,technicianActor);
         // Only advance untouched seed examples, never existing user work or completed inspections.
         if (inspection?.status === 'assigned' && inspection.version === 1 && inspection.title === example.title

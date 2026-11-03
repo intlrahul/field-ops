@@ -3,6 +3,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { randomUUID } from 'node:crypto';
 import { afterEach, beforeAll, expect, test } from 'vitest';
+import { defaultOrganizationId } from '../src/authorization/schema.js';
 import { buildApp } from '../src/app.js';
 import { migrate, openDatabase } from '../src/db/database.js';
 import { hashPassword } from '../src/auth/password.js';
@@ -19,8 +20,8 @@ function fixture() {
   cleanup.push(() => { db.close(); });
   migrate(db);
   for (const role of ['technician','supervisor']) {
-    db.prepare('INSERT INTO users (id,email,password_hash,role) VALUES (?,?,?,?)')
-      .run(randomUUID(),`${role}@fieldops.test`,passwordHash,role);
+    db.prepare('INSERT INTO users (id,email,password_hash,role,organization_id) VALUES (?,?,?,?,?)')
+      .run(randomUUID(),`${role}@fieldops.test`,passwordHash,role,defaultOrganizationId);
   }
   let time = Date.UTC(2026,9,15);
   const app = buildApp(db,false,{ secret: 'test-only-secret-with-at-least-32-bytes', now: () => time });

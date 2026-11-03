@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: FieldOps API
-  version: 0.4.0
+  version: 0.5.0
   description: Authentication, health, assets, and assigned-inspection API. Includes inspection workflow mutations. Synchronization is deferred. Request bodies are limited to 16 KiB; oversized requests return 413 with the standard error envelope.
 servers:
   - url: http://localhost:3000
@@ -168,7 +168,7 @@ paths:
   /me:
     get:
       operationId: getCurrentUser
-      summary: Return the authenticated user's current profile and role
+      summary: Return the authenticated user's current profile, roles and effective capabilities
       security:
         - bearerAuth: []
       responses:
@@ -182,6 +182,9 @@ paths:
                 id: 0190b6c1-b11d-4db0-8891-124ddfa32784
                 email: technician@fieldops.test
                 role: technician
+                roles: [technician]
+                organizationId: 00000000-0000-4000-8000-000000000001
+                capabilities: [assets.read, inspections.read, inspections.perform]
         '401':
           $ref: '#/components/responses/Unauthorized'
         '500':
@@ -196,11 +199,21 @@ components:
     User:
       type: object
       additionalProperties: false
-      required: [id, email, role]
+      required: [id, email, role, roles, organizationId, capabilities]
       properties:
         id: {type: string, format: uuid}
         email: {type: string}
-        role: {type: string, enum: [supervisor, technician]}
+        role: {type: string, enum: [supervisor, technician], description: Legacy primary role retained for compatibility}
+        roles:
+          type: array
+          items: {type: string}
+          description: Currently one role; informational, not client authorization logic
+        organizationId: {type: string, format: uuid}
+        capabilities:
+          type: array
+          uniqueItems: true
+          items: {type: string}
+          description: Effective server-derived capabilities; ignore unknown strings and treat missing capabilities as unavailable
     TokenPair:
       type: object
       additionalProperties: false

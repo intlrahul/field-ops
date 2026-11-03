@@ -1,8 +1,10 @@
-export type Actor = { id: string; role: 'supervisor' | 'technician' };
+export type { Actor } from '../authorization/policy.js';
+import type { InspectionAction } from '../authorization/policy.js';
+import type { CompletionBlocker } from './rules.js';
 export type InspectionStatistics = { total: number; assigned: number; inProgress: number; completed: number };
 export type AssetInput = { assetTag: string; name: string; location?: string | null };
 export type AssetSnapshot = { id: string; assetTag: string; name: string; location: string | null };
-export type Asset = AssetSnapshot & { createdAt: string; updatedAt: string; version: number };
+export type Asset = AssetSnapshot & { organizationId: string; createdAt: string; updatedAt: string; version: number };
 export type ChecklistDefinition = { label: string; required: boolean };
 export type ReadingDefinition = ChecklistDefinition & { unit: string; minValue: number | null; maxValue: number | null };
 export type InspectionInput = {
@@ -10,13 +12,14 @@ export type InspectionInput = {
   checklistItems: ChecklistDefinition[]; readingDefinitions: ReadingDefinition[];
 };
 export type InspectionSummary = {
-  id: string; title: string; status: 'assigned' | 'in_progress' | 'completed';
+  organizationId: string; id: string; title: string; status: 'assigned' | 'in_progress' | 'completed';
   asset: AssetSnapshot; assigneeId: string; dueAt: string | null;
   createdAt: string; updatedAt: string; version: number;
 };
 export type ChecklistItem = ChecklistDefinition & { id: string; position: number; result: 'pass' | 'fail' | null; failureNote: string | null };
 export type Reading = ReadingDefinition & { id: string; position: number; value: number | null; rangeStatus: 'unrecorded' | 'in_range' | 'out_of_range' };
 export type InspectionDetail = InspectionSummary & {
+  allowedActions: InspectionAction[]; completionBlockers: CompletionBlocker[];
   checklistItems: ChecklistItem[]; readings: Reading[]; notes: InspectionNote[];
   startedAt: string | null; completedAt: string | null;
 };

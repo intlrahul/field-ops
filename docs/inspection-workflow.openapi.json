@@ -2,7 +2,7 @@
   "openapi": "3.0.3",
   "info": {
     "title": "FieldOps inspection workflow",
-    "version": "0.4.0",
+    "version": "0.5.0",
     "description": "Online workflow API. No sync engine, mutation conflict detection, or general POST retry guarantee yet."
   },
   "servers": [
@@ -19,7 +19,7 @@
     "/inspections/{id}/start": {
       "post": {
         "operationId": "startInspection",
-        "description": "Assigned technician only. Active session required. Work requires in_progress; completed inspections are read-only. All responses use Cache-Control: no-store. assigned transitions to in_progress; repeated start while in_progress is a no-op.",
+        "description": "Requires inspections.perform, same organization and assignment to the current user (technician or supervisor). Active session required. Work requires in_progress; completed inspections are read-only. All responses use Cache-Control: no-store. assigned transitions to in_progress; repeated start while in_progress is a no-op.",
         "parameters": [
           {
             "name": "id",
@@ -130,7 +130,7 @@
     "/inspections/{id}/complete": {
       "post": {
         "operationId": "completeInspection",
-        "description": "Assigned technician only. Active session required. Work requires in_progress; completed inspections are read-only. All responses use Cache-Control: no-store. Checks persisted answers/readings and completes in one transaction; no waiver for out-of-range values.",
+        "description": "Requires inspections.perform, same organization and assignment to the current user (technician or supervisor). Active session required. Work requires in_progress; completed inspections are read-only. All responses use Cache-Control: no-store. Checks persisted answers/readings and completes in one transaction; no waiver for out-of-range values.",
         "parameters": [
           {
             "name": "id",
@@ -251,7 +251,7 @@
     "/inspections/{id}/checklist-items/{itemId}/result": {
       "put": {
         "operationId": "setChecklistResult",
-        "description": "Assigned technician only. Active session required. Work requires in_progress; completed inspections are read-only. All responses use Cache-Control: no-store. null clears an answer. A failed result may omit an explanation while drafting but blocks completion. Non-failed results cannot have a nonblank failureNote. PUT replaces the result and explanation.",
+        "description": "Requires inspections.perform, same organization and assignment to the current user (technician or supervisor). Active session required. Work requires in_progress; completed inspections are read-only. All responses use Cache-Control: no-store. null clears an answer. A failed result may omit an explanation while drafting but blocks completion. Non-failed results cannot have a nonblank failureNote. PUT replaces the result and explanation.",
         "parameters": [
           {
             "name": "id",
@@ -369,7 +369,7 @@
     "/inspections/{id}/readings/{readingId}": {
       "put": {
         "operationId": "setReadingValue",
-        "description": "Assigned technician only. Active session required. Work requires in_progress; completed inspections are read-only. All responses use Cache-Control: no-store. Finite JSON number only. Out-of-range values are saved. Latest value replaces current display; earlier distinct values remain in internal history. Identical latest values are no-ops.",
+        "description": "Requires inspections.perform, same organization and assignment to the current user (technician or supervisor). Active session required. Work requires in_progress; completed inspections are read-only. All responses use Cache-Control: no-store. Finite JSON number only. Out-of-range values are saved. Latest value replaces current display; earlier distinct values remain in internal history. Identical latest values are no-ops.",
         "parameters": [
           {
             "name": "id",
@@ -487,7 +487,7 @@
     "/inspections/{id}/notes": {
       "post": {
         "operationId": "addInspectionNote",
-        "description": "Assigned technician only. Active session required. Work requires in_progress; completed inspections are read-only. All responses use Cache-Control: no-store. Append-only. Retrying can create duplicate notes; no idempotency key yet.",
+        "description": "Requires inspections.perform, same organization and assignment to the current user (technician or supervisor). Active session required. Work requires in_progress; completed inspections are read-only. All responses use Cache-Control: no-store. Append-only. Retrying can create duplicate notes; no idempotency key yet.",
         "parameters": [
           {
             "name": "id",

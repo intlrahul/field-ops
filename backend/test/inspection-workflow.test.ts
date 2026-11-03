@@ -3,6 +3,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { randomUUID } from 'node:crypto';
 import { afterEach, beforeAll, expect, test } from 'vitest';
+import { defaultOrganizationId } from '../src/authorization/schema.js';
 import { buildApp } from '../src/app.js';
 import { openDatabase, migrate } from '../src/db/database.js';
 import { inspectionSchema } from '../src/inspections/schema.js';
@@ -25,8 +26,8 @@ async function fixture() {
   cleanup.push(() => { db.close(); });
   migrate(db);
   const users = ['supervisor','technician','technician'].map(role => ({ id: randomUUID(),role }));
-  for (const [index,user] of users.entries()) db.prepare('INSERT INTO users (id,email,password_hash,role) VALUES (?,?,?,?)')
-    .run(user.id,`workflow${index}@fieldops.test`,hash,user.role);
+  for (const [index,user] of users.entries()) db.prepare('INSERT INTO users (id,email,password_hash,role,organization_id) VALUES (?,?,?,?,?)')
+    .run(user.id,`workflow${index}@fieldops.test`,hash,user.role,defaultOrganizationId);
   const app = buildApp(db,false,{ secret,now: () => instant });
   cleanup.push(() => app.close());
   const headers = [];
@@ -85,7 +86,7 @@ test('work and completion require an explicitly started inspection', async () =>
     expect(response.statusCode).toBe(409);
     expect(response.json().error.code).toBe('INVALID_STATE');
   }
-  expect((await f.detail()).json()).toEqual(f.inspection);
+  expect((await f.detail()).json()).toEqual({ ...f.inspection,allowedActions: ['start'] });
 });
 
 test('completion reports every blocker and changes no version or lifecycle fields', async () => {
@@ -243,7 +244,7 @@ test('migration from existing inspection data preserves definitions and initiali
   db.prepare('INSERT INTO reading_definitions (id,inspection_id,position,label,unit,required,min_value,max_value) VALUES (?,?,?,?,?,?,?,?)')
     .run(reading,inspection,0,'Old reading','°C',1,0,80);
   migrate(db); migrate(db);
-  const detail = inspectionStore(db).getInspection(inspection,{ id: technician,role: 'technician' });
+  const detail = inspectionStore(db).getInspection(inspection,{ id: technician,role: 'technician',organizationId: defaultOrganizationId });
   expect(detail).toMatchObject({ status: 'assigned',version: 1,asset: { name: 'Historical pump' },
     checklistItems: [{ id: check,label: 'Old check',result: null,failureNote: null }],
     readings: [{ id: reading,minValue: 0,maxValue: 80,value: null,rangeStatus: 'unrecorded' }],notes: [] });

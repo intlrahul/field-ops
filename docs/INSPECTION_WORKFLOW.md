@@ -1,10 +1,10 @@
 # Inspection workflow
 
-Implemented online workflow. See openapi.yaml and inspection-workflow.openapi.json for the executable contract. Existing databases receive migration 3 automatically; do not delete your database. No Docker or iOS changes are needed.
+Implemented online workflow. See openapi.yaml and inspection-workflow.openapi.json for the executable contract. Existing databases receive pending migrations (including organization migration 4) automatically; do not delete your database. No Docker or iOS changes are needed.
 
 ## Permissions and lifecycle
 
-Only the assigned, active technician may start, record work, add notes, or complete an inspection. Supervisors create/assign inspections and read progress; they cannot submit technician work or override completion. Missing/inaccessible inspections or child IDs return 404; supervisors attempting workflow mutations receive 403.
+Only the assigned, active user with inspections.perform in the same organization may start, record work, add notes, or complete an inspection. Both technicians and supervisors receive this capability. Supervisors can review organization work but cannot perform another user’s assignment or override completion. Missing/inaccessible inspections or child IDs return 404; visible-but-unassigned callers attempting workflow mutations receive 403. Cross-organization resources return 404.
 
 Lifecycle: assigned → in_progress → completed. Explicit start is required before recording any work. Completed inspections are permanently read-only. Definitions and asset snapshots remain frozen at creation.
 
@@ -110,3 +110,5 @@ Expect completed status, persisted answers/readings/notes, and completedAt. Furt
 Immediate transactions serialize workflow writes and make validation/completion atomic. They do not detect stale client intent: without expectedVersion, two distinct PUTs use the latest committed write. A retried older PUT can overwrite a newer value. Version fields are currently informational. POST notes can duplicate after a lost response; completion retried after success returns 409, so fetch details to reconcile. Do not use these endpoints as an offline mutation queue yet.
 
 Client operation IDs, general idempotency, expected-version conflicts, sync cursors, tombstones, access changes while offline, and deliberate conflict resolution belong to the next synchronization milestone. HTTPS and optional Docker packaging remain deferred.
+
+Full inspection responses now include allowedActions and completionBlockers; see AUTHORIZATION.md. The same action policy and pure completion rules drive both metadata and mutation authorization. Authentication and mutable permissions are rechecked in write transactions.

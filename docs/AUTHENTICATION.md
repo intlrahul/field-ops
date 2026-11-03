@@ -41,7 +41,10 @@ A successful login returns this shape (token strings below are placeholders):
   "user": {
     "id": "0190b6c1-b11d-4db0-8891-124ddfa32784",
     "email": "technician@fieldops.test",
-    "role": "technician"
+    "role": "technician",
+    "roles": ["technician"],
+    "organizationId": "00000000-0000-4000-8000-000000000001",
+    "capabilities": ["assets.read", "inspections.read", "inspections.perform"]
   }
 }
 ```
@@ -70,7 +73,7 @@ Errors use {"error":{"code":"UNAUTHORIZED","message":"Authentication required"}}
 - One login creates one independent session; a 30-day absolute deadline does not slide on refresh. Epoch seconds are stored internally, UTC RFC 3339 timestamps exposed externally. A clock is injected for deterministic expiry tests.
 - Rotation: consume the old token and insert the new hash in one immediate SQLite transaction. On reuse, revoke that session in a committed transaction and then return 401. Never throw inside the transaction in a way that rolls revocation back.
 - Strict replay policy: if a refresh response is lost, retrying that consumed token revokes the session. Parallel refresh attempts produce one successful rotation and revoke its session when the other attempt reuses the token. The client must serialize refresh requests and require sign-in on rejection. There is no refresh retry grace period.
-- Protected requests query the current session/user from SQLite. Logout and account deactivation take effect immediately despite an otherwise valid JWT. Current role comes from the database, not a stale token claim. Both roles may access /me; resource and role restrictions for inspection/supervisor operations arrive with those endpoints. Returning a role is not itself resource authorization.
+- Protected requests query the current session/user from SQLite. Logout and account deactivation take effect immediately despite an otherwise valid JWT. Current role comes from the database, not a stale token claim. Both roles may access /me; capability and organization/resource restrictions apply independently to inspection and asset operations. Returning a role is not itself resource authorization.
 - Logout requires an unexpired access token and revokes just that session. Repeated logout returns 401. If access has expired, refresh first; if already offline, discard local credentials and the server session eventually expires. Logout-all and account recovery are deferred.
 - Login: five requests per source IP per minute; refresh: thirty. The limiter is bounded in-process state and resets on restart. It does not prevent distributed attacks. Trust-proxy is disabled; explicitly configure trusted proxy addresses before deploying behind a proxy so attackers cannot supply arbitrary client IPs. Requests behind an unconfigured proxy share a limit.
 - Authorization headers/cookies are redacted in logs; bodies and returned tokens are not logged. Do not add credential/body logging.
@@ -88,3 +91,7 @@ Libraries: [node-argon2](https://github.com/ranisalt/node-argon2), [jose](https:
 ## iOS logout request implementation
 
 RemoteAuthRepository.signOut() uses APIClient.postWithoutResponse(path: "auth/logout", requiresAuthentication: true). The API client obtains the current access token from AccessTokenProvider and sets the bearer header; logout has no refreshToken body. Empty 204 responses succeed without JSON decoding. Local session cleanup follows server success, and only then does the Account screen invoke onSignedOut. A 401 leaves the local session intact and reports failure; this implementation does not automatically refresh expired access tokens before logout. The client transport is injectable for request-contract tests without calling the live backend.
+
+## Capability authorization
+
+See AUTHORIZATION.md for the current capability catalog, separate scope policy, consistent login/refresh/me response fields, error precedence and migration 4. Roles group permissions centrally in code; existing role is retained alongside roles, organizationId and capabilities. No registration/profile API can set these values. Seed accounts retain existing passwords/roles and belong to the default organization.

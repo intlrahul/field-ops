@@ -2,7 +2,7 @@
   "openapi": "3.0.3",
   "info": {
     "title": "FieldOps assets and inspections",
-    "version": "0.4.0",
+    "version": "0.5.0",
     "description": "Implemented assets and assigned-inspection endpoints. See ASSETS_INSPECTIONS.md for business rules, examples, and cursor semantics. Requires active bearer sessions; body limit 16 KiB."
   },
   "servers": [
@@ -19,7 +19,7 @@
     "/assets": {
       "post": {
         "operationId": "createAsset",
-        "description": "Supervisor only. Unique uppercase assetTag.",
+        "description": "Required management capabilities in the current organization. Unique uppercase assetTag.",
         "requestBody": {
           "required": true,
           "content": {
@@ -113,7 +113,7 @@
       },
       "get": {
         "operationId": "listAssets",
-        "description": "Supervisor only. Keyset pagination by createdAt DESC, id DESC.",
+        "description": "assets.read required. Supervisors list organization assets; technicians list only assets linked to their assignments.",
         "parameters": [
           {
             "name": "limit",
@@ -282,7 +282,7 @@
     "/inspections": {
       "post": {
         "operationId": "createInspection",
-        "description": "Supervisor only. Active technician assignee required. Definitions and asset snapshot fixed at creation; status assigned, version 1. Atomic creation. No idempotent retry guarantee.",
+        "description": "inspections.create and inspections.assign required. Asset and active assignee must belong to the current organization; assignee must have inspections.perform. Definitions and asset snapshot freeze at creation.",
         "requestBody": {
           "required": true,
           "content": {
@@ -376,7 +376,7 @@
       },
       "get": {
         "operationId": "listInspections",
-        "description": "Supervisor sees all; technician sees own only and cannot submit assigneeId (403). Cursors bind filters and effective user scope. Not a sync cursor.",
+        "description": "inspections.read required. Supervisors see their organization; technicians see own assignments only and cannot submit assigneeId (403). Cursors bind filters and effective user scope. Not a sync cursor.",
         "parameters": [
           {
             "name": "limit",
@@ -497,7 +497,7 @@
     "/inspections/{id}": {
       "get": {
         "operationId": "getInspection",
-        "description": "Supervisor or assigned technician only. Inaccessible inspections return 404. Includes asset snapshot, ordered checklist/readings, and notes.",
+        "description": "inspections.read plus organization/read scope required. Inaccessible inspections return 404. Includes asset snapshot, ordered checklist/readings, and notes.",
         "parameters": [
           {
             "name": "id",
@@ -577,7 +577,7 @@
       "get": {
         "operationId": "getInspectionStatistics",
         "summary": "Count all authorized inspections by status",
-        "description": "Technicians see only their assignments; supervisors see all inspections. Independent of pagination. No query parameters or filters are accepted. Counts are consistent within this response; separate list requests may reflect later changes.",
+        "description": "Technicians see only their assignments; supervisors see all inspections in their organization. Independent of pagination. No query parameters or filters are accepted. Counts are consistent within this response; separate list requests may reflect later changes.",
         "responses": {
           "400": {
             "description": "INVALID_REQUEST: query parameters are not supported",
@@ -639,6 +639,16 @@
                   "assigned": 20,
                   "inProgress": 14,
                   "completed": 8
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "FORBIDDEN: capability or visible-resource assignment denied",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
                 }
               }
             }
@@ -730,7 +740,8 @@
           "location",
           "createdAt",
           "updatedAt",
-          "version"
+          "version",
+          "organizationId"
         ],
         "properties": {
           "id": {
@@ -767,6 +778,11 @@
           "version": {
             "type": "integer",
             "minimum": 1
+          },
+          "organizationId": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Server-owned organization identifier."
           }
         }
       },
@@ -884,7 +900,8 @@
           "dueAt",
           "createdAt",
           "updatedAt",
-          "version"
+          "version",
+          "organizationId"
         ],
         "properties": {
           "id": {
@@ -928,6 +945,11 @@
           "version": {
             "type": "integer",
             "minimum": 1
+          },
+          "organizationId": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Server-owned organization identifier."
           }
         }
       },
@@ -1083,7 +1105,10 @@
           "readings",
           "notes",
           "startedAt",
-          "completedAt"
+          "completedAt",
+          "organizationId",
+          "allowedActions",
+          "completionBlockers"
         ],
         "properties": {
           "id": {
@@ -1155,6 +1180,39 @@
             "type": "string",
             "format": "date-time",
             "nullable": true
+          },
+          "organizationId": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Server-owned organization identifier."
+          },
+          "allowedActions": {
+            "type": "array",
+            "uniqueItems": true,
+            "items": {
+              "type": "string"
+            },
+            "description": "Actor-specific available actions: start, edit_answers, edit_readings, add_note, complete. Missing or unknown entries grant nothing; reauthorized on every request."
+          },
+          "completionBlockers": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "code",
+                "itemId"
+              ],
+              "properties": {
+                "code": {
+                  "type": "string"
+                },
+                "itemId": {
+                  "type": "string",
+                  "format": "uuid"
+                }
+              }
+            }
           }
         }
       },

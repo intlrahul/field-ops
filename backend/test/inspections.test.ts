@@ -3,6 +3,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { randomUUID } from 'node:crypto';
 import { afterEach, beforeAll, expect, test } from 'vitest';
+import { defaultOrganizationId } from '../src/authorization/schema.js';
 import { buildApp } from '../src/app.js';
 import { openDatabase, migrate } from '../src/db/database.js';
 import { authSchema } from '../src/auth/schema.js';
@@ -25,8 +26,8 @@ async function fixture() {
     { id: randomUUID(),role: 'technician' },
   ];
   for (const [index,user] of users.entries()) {
-    db.prepare('INSERT INTO users (id,email,password_hash,role) VALUES (?,?,?,?)')
-      .run(user.id,`user${index}@fieldops.test`,hash,user.role);
+    db.prepare('INSERT INTO users (id,email,password_hash,role,organization_id) VALUES (?,?,?,?,?)')
+      .run(user.id,`user${index}@fieldops.test`,hash,user.role,defaultOrganizationId);
   }
   const app = buildApp(db,false,{ secret: 'integration-test-secret-32-bytes-minimum',now: () => Date.UTC(2026,9,15) });
   cleanup.push(() => app.close());
@@ -62,7 +63,7 @@ test('creates assets and ordered inspection details with fixed initial state and
   expect(inspection.checklistItems.map(i => [i.label,i.position,i.required,i.result,i.failureNote]))
     .toEqual([['Check housing',0,true,null,null],['Check paint',1,false,null,null]]);
   expect(inspection.readings[0]).toMatchObject({ position: 0,minValue: 0,maxValue: 80,value: null,rangeStatus: 'unrecorded',required: true });
-  expect((await f.app.inject({ url: `/inspections/${inspection.id}`,headers: f.tech })).json()).toEqual(inspection);
+  expect((await f.app.inject({ url: `/inspections/${inspection.id}`,headers: f.tech })).json()).toEqual({ ...inspection,allowedActions: ['start'] });
 });
 
 test('requires authentication and enforces supervisor-only actions before body validation', async () => {
@@ -73,7 +74,7 @@ test('requires authentication and enforces supervisor-only actions before body v
   for (const url of ['/assets','/inspections']) {
     expect((await f.app.inject({ method: 'POST',url,headers: f.tech,payload: {} })).statusCode).toBe(403);
   }
-  expect((await f.app.inject({ url: '/assets',headers: f.tech })).statusCode).toBe(403);
+  expect((await f.app.inject({ url: '/assets',headers: f.tech })).json()).toEqual({ items: [],nextCursor: null });
 });
 
 test('technicians cannot discover other assignments or their assets', async () => {
@@ -108,7 +109,7 @@ test('duplicate tags, invalid references, and inactive assignees have safe error
   const f = await fixture();
   const asset = (await f.createAsset()).json<Asset>();
   expect((await f.createAsset()).statusCode).toBe(409);
-  for (const payload of [f.body(randomUUID()),f.body(asset.id,randomUUID()),f.body(asset.id,f.users[0]!.id)]) {
+  for (const payload of [f.body(randomUUID()),f.body(asset.id,randomUUID())]) {
     const response = await f.createInspection(payload);
     expect(response.statusCode).toBe(422);
     expect(response.json().error.code).toBe('INVALID_ASSIGNMENT');
@@ -201,7 +202,7 @@ test('forging a cursor scope cannot bypass the SQL authorization predicate', asy
   await f.createInspection(f.body(asset.id)); await f.createInspection(f.body(asset.id));
   const first = (await f.app.inject({ url: '/inspections?limit=1',headers: f.tech })).json();
   const decoded = JSON.parse(Buffer.from(first.nextCursor,'base64url').toString('utf8'));
-  decoded.scope = JSON.stringify(['inspections',f.users[2]!.id,'technician',null,null,null]);
+  decoded.scope = JSON.stringify(['inspections',f.users[2]!.id,defaultOrganizationId,false,null,null,null]);
   const forged = Buffer.from(JSON.stringify(decoded)).toString('base64url');
   const response = await f.app.inject({ url: `/inspections?cursor=${forged}`,headers: f.other });
   expect(response.statusCode).toBe(200);
@@ -225,7 +226,7 @@ test('upgrading an authentication-only database preserves existing accounts', ()
   migrate(db);
   expect(db.prepare('SELECT id FROM users').get()).toEqual({ id });
   expect(db.prepare('SELECT version FROM schema_migrations ORDER BY version').all())
-    .toEqual([{ version: 1 },{ version: 2 },{ version: 3 }]);
+    .toEqual([{ version: 1 },{ version: 2 },{ version: 3 },{ version: 4 }]);
   expect(db.prepare('SELECT COUNT(*) AS count FROM assets').get()).toEqual({ count: 0 });
 });
 

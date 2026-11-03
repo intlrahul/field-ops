@@ -26,7 +26,7 @@ Once completed, an inspection is read-only for everyone, including supervisors: 
 
 ## Implemented workflow defaults
 
-Only the assigned technician may submit work. Explicit start is required before results, readings, notes, or completion. Mandatory checks must be answered; every failure, including optional checks, requires a nonblank item-specific explanation for completion. Failed checks may be saved incomplete while drafting. General notes cannot substitute for failure explanations.
+Only the assigned same-organization user with inspections.perform may submit work (technicians and supervisors). Explicit start is required before results, readings, notes, or completion. Mandatory checks must be answered; every failure, including optional checks, requires a nonblank item-specific explanation for completion. Failed checks may be saved incomplete while drafting. General notes cannot substitute for failure explanations.
 
 Bounds are inclusive; absent optional readings do not block completion, but any provided out-of-range reading does. Values are finite JSON numbers with fixed units. Internal measurement history preserves distinct replacements; only the latest measurement is exposed in details. Notes are append-only. Workflow changes increment the parent version atomically. See INSPECTION_WORKFLOW.md for state errors, retries, and limitations.
 

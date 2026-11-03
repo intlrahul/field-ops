@@ -7,11 +7,11 @@ Status: implemented. The main contract is openapi.yaml, which includes the asset
 | Endpoint | Supervisor | Technician |
 | --- | --- | --- |
 | POST /assets | Create | 403 |
-| GET /assets | List all | 403 |
+| GET /assets | List organization assets | List assets linked to own assignments |
 | GET /assets/{id} | Read | Read only if assigned an inspection for this asset |
 | POST /inspections | Create and assign | 403 |
-| GET /inspections | List all | List own assignments only |
-| GET /inspections/{id} | Read all | Read own assignments only |
+| GET /inspections | List organization inspections | List own assignments only |
+| GET /inspections/{id} | Read organization inspections | Read own assignments only |
 
 Every endpoint requires an active session. Validate resource access in SQL/application operations, not by filtering already-paginated results or trusting a submitted user ID. A technician requesting another technician's resource receives 404, identical to a missing resource. Supervisor-only actions return 403 for technicians without revealing whether supplied resources exist.
 
@@ -21,7 +21,7 @@ All IDs are server-generated UUIDs. All exposed timestamps are server-owned UTC 
 
 Asset: id, assetTag, name, location, createdAt, updatedAt, version. assetTag is a unique uppercase identifier matching [A-Z0-9-], 1–40 characters; duplicates return 409 ASSET_TAG_EXISTS. Name is nonblank and at most 120 characters. Location is optional, nullable, nonblank when supplied, and at most 200 characters; it is free text, not coordinates. Trim human-readable text before validating/persisting. Reject unexpected request fields. Normalize absent location to null in responses.
 
-Inspection creation: assetId, assigneeId, title, optional dueAt, checklistItems, readingDefinitions. Title is nonblank, at most 160 characters. dueAt is null or an RFC 3339 timestamp with an explicit offset; normalize to UTC. Past dates are accepted (overdue work is valid). Asset must exist; assignee must be an active technician. assigneeId is required: no unassigned/draft lifecycle in this slice. Missing references or an inactive/non-technician assignee return 422 INVALID_ASSIGNMENT with a generic message.
+Inspection creation: assetId, assigneeId, title, optional dueAt, checklistItems, readingDefinitions. Title is nonblank, at most 160 characters. dueAt is null or an RFC 3339 timestamp with an explicit offset; normalize to UTC. Past dates are accepted (overdue work is valid). Asset must exist; assignee must be an active same-organization user with inspections.perform (technician or supervisor). assigneeId is required: no unassigned/draft lifecycle in this slice. Missing references or an inactive/ineligible assignee return 422 INVALID_ASSIGNMENT with a generic message.
 
 Create 1–30 checklist items and 0–10 reading definitions. These limits keep nested requests within the current 16 KiB request-body limit for typical inputs; a body exceeding that limit still returns 413. Array order defines display order. Create parent, items, and definitions atomically; failure leaves no partial inspection.
 
@@ -43,7 +43,7 @@ Inspection summary: id, title, status, asset snapshot, assigneeId, dueAt, create
 
 Both lists accept limit (default 20, range 1–100) and an opaque cursor. Sort by immutable (createdAt DESC, id DESC), using keyset pagination. Return {items, nextCursor}; nextCursor is null on the last page. No total count initially.
 
-GET /inspections additionally accepts one status filter and assetId. Supervisors may filter by assigneeId; technicians cannot submit assigneeId (403), even their own ID. Their authorization predicate always selects the current user's assignments. Asset list has no search/filter initially.
+GET /inspections additionally accepts one status filter and assetId. Supervisors may filter by assigneeId within their organization; technicians cannot submit assigneeId (403), even their own ID. Their authorization predicate always selects the current user's assignments. Asset list has no search/filter initially.
 
 Cursors encode the last sort tuple and effective filters. Invalid or filter-mismatched cursors return 400 INVALID_CURSOR. They are continuation hints, never authorization credentials. Validate and bind effective user scope on every request. Restart pagination when changing filters. Pages are not snapshot-isolated across requests: concurrent changes may change membership. This list cursor is not a future synchronization cursor.
 
@@ -147,7 +147,7 @@ GET /inspections/statistics requires an active bearer session and returns:
 {"total":42,"assigned":20,"inProgress":14,"completed":8}
 ```
 
-Technicians receive counts for all of their assignments; supervisors receive counts for all inspections. All four fields are nonnegative integers and are zero for an empty authorized dataset. total equals assigned + inProgress + completed. Counts use one SQL aggregate statement with the same authorization scope as inspection reads, independent of list pagination. The response uses Cache-Control: no-store. Separate statistics/list requests can observe different database states if work changes between requests; they are not a combined snapshot.
+Technicians receive counts for all of their assignments; supervisors receive counts for all inspections in their organization. All four fields are nonnegative integers and are zero for an empty authorized dataset. total equals assigned + inProgress + completed. Counts use one SQL aggregate statement with the same authorization scope as inspection reads, independent of list pagination. The response uses Cache-Control: no-store. Separate statistics/list requests can observe different database states if work changes between requests; they are not a combined snapshot.
 
 No query parameters are accepted in this initial endpoint. Pagination, status, assetId, assigneeId, and other parameters return 400 INVALID_REQUEST rather than silently altering or narrowing totals. Invalid/missing credentials or an inactive session/user return 401. Standard error envelopes apply. This static path is distinct from /inspections/{id}.
 
@@ -157,3 +157,7 @@ curl http://127.0.0.1:3000/inspections/statistics \
 ```
 
 The iOS dashboard now consumes these totals separately from the list and refreshes both. Statistics have independent loading/error/retry handling without substituting partial list counts. See IOS_INSPECTIONS.md.
+
+## Capability and organization scope
+
+AUTHORIZATION.md is authoritative for migration 4 and supersedes former role-only descriptions. Asset/inspection responses include organizationId; full inspection details also include actor-specific allowedActions and completionBlockers. Supervisors may be assigned and perform inspections, but never bypass assignment or lifecycle rules. Creation requires inspections.create and inspections.assign; assignees and assets must belong to the current organization. Existing asset tag uniqueness remains global. Technician asset lists are scoped, not forbidden. Existing pagination cursors may need to be restarted.

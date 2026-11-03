@@ -1,5 +1,5 @@
 import type { SqliteDatabase } from '../db/database.js';
-export type User = { id: string; email: string; password_hash: string; role: 'supervisor' | 'technician'; active: number };
+export type User = { organization_id: string; id: string; email: string; password_hash: string; role: 'supervisor' | 'technician'; active: number };
 export type SessionUser = User & { session_id: string; expires_at: number; revoked_at: number | null; consumed_at?: number | null };
 
 export function authStore(db: SqliteDatabase) {

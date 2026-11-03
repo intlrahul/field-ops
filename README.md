@@ -39,3 +39,5 @@ Repository layout: ios/ contains the existing iOS project; backend/ contains the
 For the iOS routing integration and deep-link checks, see [iOS navigation](docs/IOS_NAVIGATION.md).
 
 The shared iOS components, theme, typography, and styling convention are documented in [DESIGN_SYSTEM.md](docs/DESIGN_SYSTEM.md). The design system lives in the local [Prism package](ios/local_dependencies/Prism). Open PrismCatalog in Xcode previews to review the palette and component states.
+
+Backend capability authorization, organization scope, inspection allowedActions, and migration compatibility are documented in [AUTHORIZATION.md](docs/AUTHORIZATION.md). No iOS capability integration is included yet.
