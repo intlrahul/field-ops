@@ -102,8 +102,8 @@ struct AppNavigationTests {
     @Test func inspectionDeepLinkResumesAboveDashboardAfterLogin() async throws
     {
         let registrations =
-            DashboardRoutes.registrations(getInspections: DefaultGetInspectionsUseCase(repository: PreviewInspectionRepository()), getStatistics: DefaultGetInspectionStatisticsUseCase(repository: PreviewInspectionRepository()))
-            + InspectionRoutes.registrations(getDetails: DefaultGetInspectionDetailsUseCase(repository: PreviewInspectionRepository()), getInspections: DefaultGetInspectionsUseCase(repository: PreviewInspectionRepository()), getStatistics: DefaultGetInspectionStatisticsUseCase(repository: PreviewInspectionRepository()))
+            DashboardRoutes.registrations(getInspections: DefaultGetInspectionsUseCase(repository: PreviewInspectionRepository()), getStatistics: DefaultGetInspectionStatisticsUseCase(repository: PreviewInspectionRepository()), getCurrentUser: PreviewCurrentUserUseCase())
+            + InspectionRoutes.registrations(getDetails: DefaultGetInspectionDetailsUseCase(repository: PreviewInspectionRepository()), getInspections: DefaultGetInspectionsUseCase(repository: PreviewInspectionRepository()), getStatistics: DefaultGetInspectionStatisticsUseCase(repository: PreviewInspectionRepository()), getCurrentUser: PreviewCurrentUserUseCase())
         let registry = try RouteRegistry(
             routes: registrations.map(\.definition)
         )
@@ -135,11 +135,11 @@ struct AppNavigationTests {
         let repository = PreviewInspectionRepository()
         let registrations = DashboardRoutes.registrations(
             getInspections: DefaultGetInspectionsUseCase(repository: repository),
-            getStatistics: DefaultGetInspectionStatisticsUseCase(repository: repository)
+            getStatistics: DefaultGetInspectionStatisticsUseCase(repository: repository), getCurrentUser: PreviewCurrentUserUseCase()
         ) + InspectionRoutes.registrations(
             getDetails: DefaultGetInspectionDetailsUseCase(repository: repository),
             getInspections: DefaultGetInspectionsUseCase(repository: repository),
-            getStatistics: DefaultGetInspectionStatisticsUseCase(repository: repository)
+            getStatistics: DefaultGetInspectionStatisticsUseCase(repository: repository), getCurrentUser: PreviewCurrentUserUseCase()
         )
         let registry = try RouteRegistry(routes: registrations.map(\.definition))
         let router = Router(registry: registry, authentication: .signedIn)
@@ -161,8 +161,8 @@ struct AppNavigationTests {
         throws
     {
         let registrations =
-            DashboardRoutes.registrations(getInspections: DefaultGetInspectionsUseCase(repository: PreviewInspectionRepository()), getStatistics: DefaultGetInspectionStatisticsUseCase(repository: PreviewInspectionRepository()))
-            + InspectionRoutes.registrations(getDetails: DefaultGetInspectionDetailsUseCase(repository: PreviewInspectionRepository()), getInspections: DefaultGetInspectionsUseCase(repository: PreviewInspectionRepository()), getStatistics: DefaultGetInspectionStatisticsUseCase(repository: PreviewInspectionRepository()))
+            DashboardRoutes.registrations(getInspections: DefaultGetInspectionsUseCase(repository: PreviewInspectionRepository()), getStatistics: DefaultGetInspectionStatisticsUseCase(repository: PreviewInspectionRepository()), getCurrentUser: PreviewCurrentUserUseCase())
+            + InspectionRoutes.registrations(getDetails: DefaultGetInspectionDetailsUseCase(repository: PreviewInspectionRepository()), getInspections: DefaultGetInspectionsUseCase(repository: PreviewInspectionRepository()), getStatistics: DefaultGetInspectionStatisticsUseCase(repository: PreviewInspectionRepository()), getCurrentUser: PreviewCurrentUserUseCase())
         let registry = try RouteRegistry(
             routes: registrations.map(\.definition)
         )

@@ -1,27 +1,14 @@
-//
-//  UserDTO.swift
-//  FieldOps
-//
-//  Created by Rahul Singh on 16/10/26.
-//
-
-nonisolated enum UserRole: String, Decodable, Sendable {
-    case supervisor
-    case technician
-}
-
 nonisolated struct UserDTO: Decodable, Sendable {
     let id: String
     let email: String
-    let role: UserRole
-}
+    let role: String?
+    let roles: [String]?
+    let organizationId: String?
+    let capabilities: [String]?
 
-extension UserDTO {
     func toDomain() -> User {
-        User(
-            id: id,
-            name: email,
-            email: email
-        )
+        User(id: id, name: email, email: email,
+             roles: roles ?? role.map { [$0] } ?? [],
+             organizationId: organizationId, capabilities: Set(capabilities ?? []))
     }
 }

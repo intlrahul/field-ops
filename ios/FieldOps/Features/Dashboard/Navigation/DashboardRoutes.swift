@@ -6,7 +6,8 @@ enum DashboardRoutes {
 
     static func registrations(
         getInspections: any GetInspectionsUseCase,
-        getStatistics: any GetInspectionStatisticsUseCase
+        getStatistics: any GetInspectionStatisticsUseCase,
+        getCurrentUser: any GetCurrentUserUseCase
     )
         -> [FeatureRoute]
     {
@@ -15,7 +16,7 @@ enum DashboardRoutes {
                 DashboardScreen(
                     viewModel: InspectionListViewModel(
                         getInspections: getInspections,
-                        getStatistics: getStatistics
+                        getStatistics: getStatistics, getCurrentUser: getCurrentUser
                     )
                 )
             }

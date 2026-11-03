@@ -18,8 +18,8 @@ private actor PagedInspectionRepository: InspectionRepository {
         statuses.append(status)
         if shouldFail {
             throw BackendError(
-                code: "UNAUTHORIZED",
-                message: "Session expired."
+                code: "UNAVAILABLE",
+                message: "Service unavailable."
             )
         }
         return InspectionPage(
@@ -42,7 +42,7 @@ private actor PagedInspectionRepository: InspectionRepository {
 struct InspectionIntegrationTests {
     @Test func statusFilterResetsCursorAndPersistsAcrossPagination() async {
         let repository = PagedInspectionRepository()
-        let model = InspectionListViewModel(getInspections: DefaultGetInspectionsUseCase(repository: repository), getStatistics: DefaultGetInspectionStatisticsUseCase(repository: repository))
+        let model = InspectionListViewModel(getInspections: DefaultGetInspectionsUseCase(repository: repository), getStatistics: DefaultGetInspectionStatisticsUseCase(repository: repository), getCurrentUser: PreviewCurrentUserUseCase())
         await model.refresh()
         await model.load(reset: false)
         await model.selectStatus(.inProgress)
@@ -56,7 +56,7 @@ struct InspectionIntegrationTests {
     }
 
     @Test func statisticsRemainIndependentOfLoadedPages() async {
-        let model = InspectionListViewModel(getInspections: DefaultGetInspectionsUseCase(repository: PagedInspectionRepository()), getStatistics: DefaultGetInspectionStatisticsUseCase(repository: PagedInspectionRepository()))
+        let model = InspectionListViewModel(getInspections: DefaultGetInspectionsUseCase(repository: PagedInspectionRepository()), getStatistics: DefaultGetInspectionStatisticsUseCase(repository: PagedInspectionRepository()), getCurrentUser: PreviewCurrentUserUseCase())
         await model.refresh()
         #expect(model.inspections.count == 1)
         #expect(model.statistics == InspectionStatistics(total: 50, assigned: 20, inProgress: 15, completed: 15))
@@ -67,7 +67,7 @@ struct InspectionIntegrationTests {
 
     @Test func statisticsFailureDoesNotSubstituteListCountsAndCanRetry() async {
         let repository = PagedInspectionRepository()
-        let model = InspectionListViewModel(getInspections: DefaultGetInspectionsUseCase(repository: repository), getStatistics: DefaultGetInspectionStatisticsUseCase(repository: repository))
+        let model = InspectionListViewModel(getInspections: DefaultGetInspectionsUseCase(repository: repository), getStatistics: DefaultGetInspectionStatisticsUseCase(repository: repository), getCurrentUser: PreviewCurrentUserUseCase())
         await model.refresh()
         await repository.fail()
         await model.loadStatistics()
@@ -99,7 +99,7 @@ struct InspectionIntegrationTests {
 
     @Test func paginationDeduplicatesAndRefreshRestartsCursor() async {
         let repository = PagedInspectionRepository()
-        let model = InspectionListViewModel(getInspections: DefaultGetInspectionsUseCase(repository: repository), getStatistics: DefaultGetInspectionStatisticsUseCase(repository: repository))
+        let model = InspectionListViewModel(getInspections: DefaultGetInspectionsUseCase(repository: repository), getStatistics: DefaultGetInspectionStatisticsUseCase(repository: repository), getCurrentUser: PreviewCurrentUserUseCase())
         await model.load()
         await model.load(reset: false)
         #expect(model.inspections.count == 2)
@@ -112,12 +112,12 @@ struct InspectionIntegrationTests {
 
     @Test func refreshFailurePreservesLoadedData() async {
         let repository = PagedInspectionRepository()
-        let model = InspectionListViewModel(getInspections: DefaultGetInspectionsUseCase(repository: repository), getStatistics: DefaultGetInspectionStatisticsUseCase(repository: repository))
+        let model = InspectionListViewModel(getInspections: DefaultGetInspectionsUseCase(repository: repository), getStatistics: DefaultGetInspectionStatisticsUseCase(repository: repository), getCurrentUser: PreviewCurrentUserUseCase())
         await model.load()
         await repository.fail()
         await model.load()
         #expect(model.inspections.count == 1)
-        #expect(model.errorMessage == "Session expired.")
+        #expect(model.errorMessage == "Service unavailable.")
         #expect(!model.isLoading)
     }
 

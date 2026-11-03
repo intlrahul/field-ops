@@ -1,6 +1,6 @@
 # Capability-based authorization
 
-Status: implemented on the backend. SQLite migration 4 adds organizations and preserves existing data in the default FieldOps organization (00000000-0000-4000-8000-000000000001). No iOS code was changed. Restart the backend to migrate its configured database; do not delete or reset it.
+Status: implemented on the backend. SQLite migration 4 adds organizations and preserves existing data in the default FieldOps organization (00000000-0000-4000-8000-000000000001). The initial backend slice changed no iOS code; client integration is documented below. Restart the backend to migrate its configured database; do not delete or reset it.
 
 ## Capabilities and scope
 
@@ -79,3 +79,15 @@ Offline synchronization is still deferred. Any queued work must be reauthorized 
 ## Verification
 
 npm run check uses temporary file-backed SQLite databases and real migrations, without Docker. Authorization tests cover consistent login/me/refresh, technician/supervisor assignment and scope, cross-organization read/write/assignment denial, statistics and cursor isolation, lifecycle/action agreement, permission changes with existing tokens and stale service actors, privilege-injection rejection, database constraints, and historical session/work preservation. Existing workflow/rule tests cover completion blockers, children, immutability, and rollback. Seed accounts remain in the default organization with capabilities derived from their roles. Existing seed work is preserved. No production/development database was used for tests.
+
+## iOS integration
+
+UserDTO and persisted User now retain raw roles/capability strings, organizationId and legacy role compatibility. Unknown strings do not fail decoding. Legacy cached users decode with an empty permission set; role names never infer UI grants. Login and refresh use the same DTO, so newly saved sessions preserve these fields automatically.
+
+DefaultGetCurrentUserUseCase fetches authenticated GET /me through AuthRepository. Dashboard and status-list view models check that live profile before refreshing or loading more data; no inspection/statistics calls are made without inspections.read. Capability failures hide the feature and offer retry. A changed identity, organization, role set or capability set invalidates previous rows/cursors/totals; authorization failures clear access and discard late responses. A profile connectivity failure does not fall back to cached grants. Account/sign-out navigation remains available. No global coordinator/container environment or role-based UI switch was introduced.
+
+InspectionDetailDTO retains allowedActions and completionBlockers as open strings. Detail view models expose typed checks for known actions and suppress them while loading or after errors; permission/not-found errors clear old details. Read-only/review messaging reflects current metadata. Work forms and mutation buttons are still a separate slice; no unsupported asset/template management navigation is advertised merely because its capability exists.
+
+Permissions are not live-pushed: visible state can age until the next request/refresh. /me results used for screen visibility are not written over session credentials; cached session permission fields update on login/token refresh. The backend remains authoritative for each operation. Automatic token refresh after a 401 and offline synchronization remain outside this change. No feature flags are treated as permissions.
+
+Frontend verification: generic-device app and test targets compile. Added tests cover unknown/missing permissions and actions, legacy user persistence, denied inspection requests, changed permissions clearing prior content, and revoked detail actions. Tests were compiled only, not executed; no simulator was launched. Manually verify login/restoration, pull-to-refresh, status-list links, unknown/missing permissions, server denials, and account access.

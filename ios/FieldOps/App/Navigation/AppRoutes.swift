@@ -4,10 +4,14 @@ enum AppRoutes {
     static func registrations(container: AppContainer) -> [FeatureRoute] {
         DashboardRoutes.registrations(
             getInspections: DefaultGetInspectionsUseCase(repository: container.inspectionRepository),
-            getStatistics: DefaultGetInspectionStatisticsUseCase(repository: container.inspectionRepository)
+            getStatistics: DefaultGetInspectionStatisticsUseCase(repository: container.inspectionRepository),
+            getCurrentUser: DefaultGetCurrentUserUseCase(repository: container.authFactory.authRepository)
         )
             + InspectionRoutes.registrations(
-                getDetails: DefaultGetInspectionDetailsUseCase(repository: container.inspectionRepository), getInspections: DefaultGetInspectionsUseCase(repository: container.inspectionRepository), getStatistics: DefaultGetInspectionStatisticsUseCase(repository: container.inspectionRepository)
+                getDetails: DefaultGetInspectionDetailsUseCase(repository: container.inspectionRepository),
+                getInspections: DefaultGetInspectionsUseCase(repository: container.inspectionRepository),
+                getStatistics: DefaultGetInspectionStatisticsUseCase(repository: container.inspectionRepository),
+                getCurrentUser: DefaultGetCurrentUserUseCase(repository: container.authFactory.authRepository)
             )
             + AccountRoutes.registrations(
                 sessionProvider: container.sessionStore,

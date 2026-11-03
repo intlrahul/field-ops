@@ -6,6 +6,8 @@
 //
 
 protocol AuthRepository: Sendable {
+    func currentUser() async throws -> User
+
     func signIn(
         email: String,
         password: String

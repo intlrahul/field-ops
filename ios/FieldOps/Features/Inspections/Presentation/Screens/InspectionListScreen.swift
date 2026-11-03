@@ -16,28 +16,37 @@ struct InspectionListScreen: View {
     var body: some View {
         DSScreen(onRefresh: { await viewModel.load() }) {
             DSText(title, style: .title)
-            if let error = viewModel.errorMessage {
-                DSMessage(error, tone: .danger)
-                DSButton(title: "Retry") { Task { await viewModel.load() } }
-            }
-            if !viewModel.hasLoaded && viewModel.errorMessage == nil {
-                DSSkeleton(label: "Loading inspections")
-                DSSkeleton(label: "Loading more inspections")
-            }
-            if viewModel.hasLoaded && viewModel.inspections.isEmpty {
-                DSEmptyState(title: "No inspections", message: "There are no inspections matching this status.")
-            }
-            LazyVStack(spacing: DSSpacing.sm) {
-                ForEach(viewModel.inspections) { inspection in
-                    DSNavigationCard(action: { open(inspection) }) {
-                        InspectionRow(inspection: inspection)
+            if viewModel.canReadInspections {
+                if let error = viewModel.errorMessage {
+                    DSMessage(error, tone: .danger)
+                    DSButton(title: "Retry") { Task { await viewModel.load() } }
+                }
+                if !viewModel.hasLoaded && viewModel.errorMessage == nil {
+                    DSSkeleton(label: "Loading inspections")
+                    DSSkeleton(label: "Loading more inspections")
+                }
+                if viewModel.hasLoaded && viewModel.inspections.isEmpty {
+                    DSEmptyState(title: "No inspections", message: "There are no inspections matching this status.")
+                }
+                LazyVStack(spacing: DSSpacing.sm) {
+                    ForEach(viewModel.inspections) { inspection in
+                        DSNavigationCard(action: { open(inspection) }) {
+                            InspectionRow(inspection: inspection)
+                        }
                     }
                 }
-            }
-            if viewModel.nextCursor != nil {
-                DSButton(title: "Load more", isLoading: viewModel.isLoading) {
-                    Task { await viewModel.load(reset: false) }
+                if viewModel.nextCursor != nil {
+                    DSButton(title: "Load more", isLoading: viewModel.isLoading) {
+                        Task { await viewModel.load(reset: false) }
+                    }
                 }
+            } else if let error = viewModel.accessError {
+                DSMessage(error, tone: .warning)
+                DSButton(title: "Retry access") {
+                    Task { await viewModel.load() }
+                }
+            } else {
+                DSSkeleton(label: "Checking inspection access")
             }
         }
         .task { if !viewModel.hasLoaded { await viewModel.load() } }

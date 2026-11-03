@@ -15,7 +15,7 @@ enum InspectionRoutes {
         "/inspections/\(RoutePath.encodeSegment(id))"
     }
 
-    static func registrations(getDetails: any GetInspectionDetailsUseCase, getInspections: any GetInspectionsUseCase, getStatistics: any GetInspectionStatisticsUseCase)
+    static func registrations(getDetails: any GetInspectionDetailsUseCase, getInspections: any GetInspectionsUseCase, getStatistics: any GetInspectionStatisticsUseCase, getCurrentUser: any GetCurrentUserUseCase)
         -> [FeatureRoute]
     {
         [
@@ -27,7 +27,7 @@ enum InspectionRoutes {
             }) { entry, _ in
                 InspectionListScreen(viewModel: InspectionListViewModel(
                     getInspections: getInspections, getStatistics: getStatistics,
-                    initialStatus: InspectionStatus(rawValue: entry.parameters["status"]!)
+                    initialStatus: InspectionStatus(rawValue: entry.parameters["status"]!), getCurrentUser: getCurrentUser
                 ))
             },
             FeatureRoute(

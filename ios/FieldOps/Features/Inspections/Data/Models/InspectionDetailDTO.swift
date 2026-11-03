@@ -9,6 +9,9 @@ nonisolated struct InspectionDetailDTO: Decodable, Sendable {
     let checklistItems: [CheckDTO]
     let readings: [ReadingDTO]
     let notes: [NoteDTO]
+    let organizationId: String?
+    let allowedActions: [String]?
+    let completionBlockers: [InspectionCompletionBlockerDTO]?
 
     func toDomain() throws -> InspectionDetail {
         try InspectionDetail(
@@ -49,7 +52,17 @@ nonisolated struct InspectionDetailDTO: Decodable, Sendable {
                     text: $0.text,
                     createdAt: inspectionDate($0.createdAt)
                 )
+            },
+            organizationId: organizationId,
+            allowedActions: Set(allowedActions ?? []),
+            completionBlockers: (completionBlockers ?? []).map {
+                InspectionCompletionBlocker(code: $0.code, itemId: $0.itemId)
             }
         )
     }
+}
+
+nonisolated struct InspectionCompletionBlockerDTO: Decodable, Sendable {
+    let code: String
+    let itemId: String
 }

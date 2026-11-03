@@ -30,6 +30,13 @@ struct InspectionDetailsScreen: View {
                     DSText(inspection.title, style: .title)
                     DSText(inspection.assetName, tone: .secondary)
                 }
+                if !viewModel.isLoading && viewModel.errorMessage == nil {
+                    if inspection.status == .completed {
+                        DSMessage("Completed inspections are read-only.", tone: .info)
+                    } else if !InspectionAction.allCases.contains(where: { viewModel.allows($0) }) {
+                        DSMessage("You can review this inspection. No work actions are available.", tone: .info)
+                    }
+                }
                 DSSection("Inspection") {
                     DSCard {
                         VStack(spacing: DSSpacing.md) {

@@ -13,6 +13,11 @@ struct RemoteAuthRepository: AuthRepository {
         self.apiClient = apiClient
     }
 
+    func currentUser() async throws -> User {
+        let response: UserDTO = try await apiClient.get(path: "me", requiresAuthentication: true)
+        return response.toDomain()
+    }
+
     func signIn(
         email: String,
         password: String

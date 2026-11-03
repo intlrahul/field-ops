@@ -12,6 +12,11 @@ nonisolated struct InspectionDetail: Sendable {
     let checklist: [InspectionCheck]
     let readings: [InspectionReading]
     let notes: [InspectionNote]
+    var organizationId: String? = nil
+    var allowedActions: Set<String> = []
+    var completionBlockers: [InspectionCompletionBlocker] = []
+
+    func allows(_ action: InspectionAction) -> Bool { allowedActions.contains(action.rawValue) }
 }
 
 nonisolated struct InspectionCheck: Identifiable, Sendable {

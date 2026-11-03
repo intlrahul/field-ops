@@ -14,6 +14,10 @@ final class InspectionDetailViewModel {
         self.getDetails = getDetails
     }
 
+    func allows(_ action: InspectionAction) -> Bool {
+        !isLoading && errorMessage == nil && detail?.allows(action) == true
+    }
+
     func load() async {
         guard !isLoading else { return }
         isLoading = true
@@ -25,6 +29,8 @@ final class InspectionDetailViewModel {
             detail = response
         } catch {
             guard !Task.isCancelled else { return }
+            if let rejection = error as? BackendError,
+               ["FORBIDDEN", "UNAUTHORIZED", "NOT_FOUND"].contains(rejection.code) { detail = nil }
             errorMessage = (error as? BackendError)?.message ?? "Unable to load this inspection. Please try again."
         }
     }
